@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — NationalRegionB</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/logos/favicon.svg">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+<div class="page-loader" id="page-loader" role="status" aria-live="polite">
+    <div class="pl-inner">
+      <div class="pl-orbit">
+        <span class="pl-ring"></span>
+        <span class="pl-ring pl-ring--2"></span>
+        <span class="pl-ring pl-ring--3"></span>
+        <span class="pl-core"></span>
+      </div>
+      <div class="pl-track"><span class="pl-progress"></span></div>
+      <p class="pl-status" id="pl-status">Preparing your workspace</p>
+    </div>
+  </div>
+  <div id="page-root">
+    <div id="stats-grid"><div class="loading-block"><div class="spinner"></div><span>Loading platform statistics...</span></div></div>
+    <div class="admin-grid">
+      <div class="card">
+        <div class="card-header"><div><h3 class="card-title">Transaction volumes</h3><div class="card-subtitle">Last 6 months</div></div></div>
+        <div class="chart-box"><canvas id="vol-chart" height="240"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><h3 class="card-title">Transactions by status</h3></div></div>
+        <div class="chart-box" style="height:200px"><canvas id="status-chart" height="200"></canvas></div>
+        <div class="chart-legend" id="status-legend"></div>
+      </div>
+    </div>
+    <div class="card mt-3">
+      <div class="card-header"><div><h3 class="card-title">Recent admin activity</h3><div class="card-subtitle">Latest audit log entries</div></div><a href="audit-logs.html" class="btn btn-outline btn-sm">View All</a></div>
+      <div id="recent-audit"><div class="loading-block"><div class="spinner"></div><span>Loading activity...</span></div></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/charts.js"></script>
+  <script src="../js/supabase.js"></script>
+  <script src="../js/admin/auth.js"></script>
+  <script src="../js/admin/dashboard.js"></script>
+</body>
+</html>

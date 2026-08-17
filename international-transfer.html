@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>International Transfer — NationalRegionB</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logos/favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div class="page-loader" id="page-loader" role="status" aria-live="polite">
+    <div class="pl-inner">
+      <div class="pl-orbit">
+        <span class="pl-ring"></span>
+        <span class="pl-ring pl-ring--2"></span>
+        <span class="pl-ring pl-ring--3"></span>
+        <span class="pl-core"></span>
+      </div>
+      <div class="pl-track"><span class="pl-progress"></span></div>
+      <p class="pl-status" id="pl-status">Preparing your workspace</p>
+    </div>
+  </div>
+  <div id="page-root">
+    <div class="step-flow">
+      <div class="step-pill active" data-step="1"><span class="num">1</span> Recipient</div><div class="step-line"></div>
+      <div class="step-pill" data-step="2"><span class="num">2</span> Amount</div><div class="step-line"></div>
+      <div class="step-pill" data-step="3"><span class="num">3</span> Review</div>
+    </div>
+
+    <div id="step-1" class="card">
+      <h3 class="card-title mb-2">International recipient details</h3>
+      <div class="flex-between mb-3">
+        <select class="select" id="beneficiary-select" style="max-width:460px"><option value="">Select a saved international beneficiary...</option></select>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Recipient name</label><input type="text" class="input" id="r-name"></div>
+        <div class="field"><label>Bank name</label><input type="text" class="input" id="r-bank"></div>
+        <div class="field"><label>Account / IBAN</label><input type="text" class="input" id="r-account"></div>
+        <div class="field"><label>SWIFT / BIC</label><input type="text" class="input" id="r-swift" placeholder="e.g. DEUTDEFF"></div>
+        <div class="field"><label>Country</label><input type="text" class="input" id="r-country"></div>
+        <div class="field"><label>Currency</label><select class="select" id="r-currency"></select></div>
+      </div>
+      <div class="form-error" id="step1-error"></div>
+      <div class="flex-between mt-3"><span></span><button class="btn btn-primary" id="step1-next">Continue</button></div>
+    </div>
+
+    <div id="step-2" class="card hide">
+      <h3 class="card-title mb-2">Amount & purpose</h3>
+      <div class="form-grid">
+        <div class="field"><label>From account</label><select class="select" id="t-from"></select></div>
+        <div class="field"><label>Available balance</label><div class="input" id="t-balance" disabled>—</div></div>
+        <div class="field"><label>Amount to send</label>
+          <div class="amount-field"><input type="number" class="input" id="t-amount" min="0.01" step="0.01" placeholder="0.00"><span class="currency-tag" id="t-currency-tag">$</span></div>
+        </div>
+        <div class="field"><label>Transfer purpose</label><input type="text" class="input" id="t-purpose" placeholder="e.g. Family support"></div>
+      </div>
+      <div class="review-panel">
+        <div class="flex-between"><span class="text-muted">Transfer fee (SWIFT)</span><strong id="t-fee">$15.00</strong></div>
+        <div class="flex-between"><span class="text-muted">Estimated delivery</span><strong>1–3 business days</strong></div>
+        <div class="review-total"><span>Total debited</span><strong id="t-total">$0.00</strong></div>
+      </div>
+      <div class="form-error" id="step2-error"></div>
+      <div class="flex-between mt-3"><button class="btn btn-outline" id="step2-back">Back</button><button class="btn btn-primary" id="step2-next">Continue</button></div>
+    </div>
+
+    <div id="step-3" class="card hide">
+      <h3 class="card-title mb-2">Review your international transfer</h3>
+      <div class="review-panel">
+        <div class="detail-grid">
+          <div class="detail-item"><div class="k">Recipient</div><div class="v" id="rv-name">—</div></div>
+          <div class="detail-item"><div class="k">Bank</div><div class="v" id="rv-bank">—</div></div>
+          <div class="detail-item"><div class="k">Account</div><div class="v" id="rv-account">—</div></div>
+          <div class="detail-item"><div class="k">SWIFT/BIC</div><div class="v" id="rv-swift">—</div></div>
+          <div class="detail-item"><div class="k">Country</div><div class="v" id="rv-country">—</div></div>
+          <div class="detail-item"><div class="k">From account</div><div class="v" id="rv-from">—</div></div>
+          <div class="detail-item"><div class="k">Amount</div><div class="v" id="rv-amount">—</div></div>
+          <div class="detail-item"><div class="k">Fee</div><div class="v" id="rv-fee">—</div></div>
+          <div class="detail-item"><div class="k">Purpose</div><div class="v" id="rv-purpose">—</div></div>
+          <div class="detail-item"><div class="k">Delivery</div><div class="v">1–3 business days</div></div>
+        </div>
+      </div>
+      <div class="flex-between"><button class="btn btn-outline" id="step3-back">Back</button><button class="btn btn-primary" id="step3-next">Confirm & Submit</button></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/international-transfer.js"></script>
+</body>
+</html>

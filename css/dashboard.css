@@ -1,0 +1,117 @@
+/* ============================================================
+   NationalRegionB — dashboard.css
+   Customer dashboard layout (desktop + mobile reference layouts)
+   ============================================================ */
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+@media (max-width: 1100px) {
+  .dash-grid { grid-template-columns: 1fr; }
+}
+
+/* Balances row */
+.balance-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 24px; }
+@media (max-width: 900px) { .balance-cards { grid-template-columns: 1fr; } }
+
+.balance-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden;
+}
+.balance-card.primary-balance {
+  background: linear-gradient(135deg, var(--primary), #1c4f9c); color: #fff; border: none;
+}
+.balance-card .bc-label { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; opacity: .85; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.balance-card .bc-label svg { width: 15px; height: 15px; }
+.balance-card .bc-amount { font-size: 26px; font-weight: 800; letter-spacing: -.01em; }
+.balance-card .bc-sub { font-size: 12px; opacity: .75; margin-top: 4px; }
+
+/* Dashboard two-column sections */
+.dash-main-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.dash-side-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+
+/* Chart area */
+.chart-box { position: relative; width: 100%; height: 240px; }
+.chart-box canvas { width: 100% !important; height: 100% !important; }
+.chart-legend { display: flex; gap: 18px; margin-top: 12px; font-size: 13px; color: var(--text-2); flex-wrap: wrap; }
+.chart-legend .lg { display: flex; align-items: center; gap: 6px; }
+.chart-legend .swatch { width: 10px; height: 10px; border-radius: 3px; }
+
+/* Recent transactions on dashboard */
+.dash-tx { max-height: 420px; overflow-y: auto; }
+
+/* Active card showcase */
+.card-showcase { padding: 20px; }
+.card-showcase .card-face { margin-bottom: 16px; }
+.card-showcase .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ============================================================
+   Credit-card balance hero
+   ============================================================ */
+.cc-balance {
+  background: var(--surface) !important;
+  color: var(--text) !important; border: 1px solid var(--border) !important; overflow: hidden;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.cc-balance .card-face { box-shadow: 0 18px 40px rgba(11, 42, 94, .22); }
+.cc-balance .bc-bottom { margin-top: auto; padding-top: 4px; }
+.cc-balance .bc-label { margin: 0; padding: 0; color: var(--muted) !important; opacity: 1; font-weight: 700; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; }
+.cc-balance .bc-label svg { width: 15px; height: 15px; }
+.cc-balance .bc-amount { color: var(--text) !important; font-size: 30px; font-weight: 800; line-height: 1.1; overflow: hidden; }
+.cc-balance .bc-sub { opacity: .75; }
+
+/* Loan summary */
+.loan-summary .progress {
+  height: 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; margin: 10px 0 6px;
+}
+.loan-summary .progress > div { height: 100%; background: var(--accent); border-radius: 999px; }
+.loan-summary .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+
+/* Mobile ordering (stacked) */
+@media (max-width: 640px) {
+  .balance-cards .primary-balance { order: -1; }
+  .dash-side-col { order: 2; }
+}
+
+@media (max-width: 420px) {
+  .cc-balance .bc-amount { font-size: 24px; }
+  .cc-balance { gap: 12px; }
+}
+
+/* ============================================================
+   Polish (visual-only refinements; no markup changes)
+   ============================================================ */
+
+/* balance cards */
+.balance-card { transition: transform .16s ease, box-shadow .16s ease; }
+.balance-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.balance-card .bc-amount { letter-spacing: -.02em; }
+.balance-card .bc-label { font-weight: 700; }
+.balance-card.primary-balance .bc-label { opacity: .9; }
+
+/* chart area */
+.chart-box { height: 260px; }
+.chart-legend { gap: 22px; }
+.chart-legend .swatch { width: 12px; height: 12px; border-radius: 4px; }
+
+/* recent transactions panel */
+.dash-tx { max-height: 420px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.dash-tx::-webkit-scrollbar { width: 6px; }
+.dash-tx::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+
+/* card showcase */
+.card-showcase .card-face { box-shadow: 0 18px 40px rgba(11, 42, 94, .2); }
+.card-showcase .card-actions .btn { flex: 1; justify-content: center; }
+
+/* section headers inside dashboard cards */
+.dash-main-col .card-title, .dash-side-col .card-title { letter-spacing: -.01em; }
+
+/* loan summary polish */
+.loan-summary .progress > div { background: linear-gradient(90deg, var(--accent), var(--primary)); }
+
+@media (max-width: 640px) {
+  .chart-box { height: 210px; }
+  .balance-card .bc-amount { font-size: 22px; }
+}

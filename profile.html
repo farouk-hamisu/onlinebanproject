@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — NationalRegionB</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logos/favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div class="page-loader" id="page-loader" role="status" aria-live="polite">
+    <div class="pl-inner">
+      <div class="pl-orbit">
+        <span class="pl-ring"></span>
+        <span class="pl-ring pl-ring--2"></span>
+        <span class="pl-ring pl-ring--3"></span>
+        <span class="pl-core"></span>
+      </div>
+      <div class="pl-track"><span class="pl-progress"></span></div>
+      <p class="pl-status" id="pl-status">Preparing your workspace</p>
+    </div>
+  </div>
+  <div id="page-root">
+    <div class="grid-2" style="align-items:start">
+      <div class="card">
+        <h3 class="card-title mb-3">Personal information</h3>
+        <div class="flex gap-2 mb-3">
+          <div id="pfp-wrap"><span class="avatar avatar-xl" id="pfp">—</span></div>
+          <div>
+            <label class="btn btn-outline btn-sm" for="avatar-input">Upload Photo</label>
+            <button class="btn btn-outline btn-sm text-danger" id="avatar-remove" style="display:none">Remove</button>
+            <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp" class="hide">
+            <div class="text-xs text-muted mt-1">PNG, JPG or WebP up to 2MB</div>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Full name</label><input type="text" class="input" id="p-name"></div>
+          <div class="field"><label>Email <span class="text-muted">(protected)</span></label><input type="email" class="input" id="p-email" disabled></div>
+          <div class="field"><label>Phone</label><input type="tel" class="input" id="p-phone"></div>
+          <div class="field"><label>Date of birth</label><input type="date" class="input" id="p-dob"></div>
+          <div class="field"><label>Address</label><input type="text" class="input" id="p-address"></div>
+          <div class="field"><label>City</label><input type="text" class="input" id="p-city"></div>
+          <div class="field"><label>Country</label><input type="text" class="input" id="p-country"></div>
+          <div class="field"><label>KYC status</label><div id="p-kyc">—</div></div>
+        </div>
+        <div class="form-error" id="p-error"></div>
+        <button class="btn btn-primary" id="p-save">Save Changes</button>
+      </div>
+      <div class="card">
+        <h3 class="card-title mb-3">My accounts</h3>
+        <div id="p-accounts"><div class="loading-block"><div class="spinner spinner-sm"></div></div></div>
+        <div class="detail-item mt-3"><div class="k">Member since</div><div class="v" id="p-since">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/profile.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifications — NationalRegionB Admin</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/logos/favicon.svg">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+<div class="page-loader" id="page-loader" role="status" aria-live="polite">
+    <div class="pl-inner">
+      <div class="pl-orbit">
+        <span class="pl-ring"></span>
+        <span class="pl-ring pl-ring--2"></span>
+        <span class="pl-ring pl-ring--3"></span>
+        <span class="pl-core"></span>
+      </div>
+      <div class="pl-track"><span class="pl-progress"></span></div>
+      <p class="pl-status" id="pl-status">Preparing your workspace</p>
+    </div>
+  </div>
+  <div id="page-root">
+    <div class="card mb-3">
+      <div class="flex-between mb-3">
+        <h3 class="card-title mb-0">Pending transfer verifications</h3>
+        <button class="btn btn-outline btn-sm" id="btn-refresh">Refresh</button>
+      </div>
+      <div id="verify-intl"><div class="loading-block"><div class="spinner"></div><span>Loading verifications...</span></div></div>
+    </div>
+    <div class="card">
+      <h3 class="card-title mb-2">Pending crypto withdrawals</h3>
+      <div id="verify-crypto"><div class="loading-block"><div class="spinner"></div><span>Loading verifications...</span></div></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/supabase.js"></script>
+  <script src="../js/admin/auth.js"></script>
+  <script src="../js/admin/verifications.js"></script>
+</body>
+</html>

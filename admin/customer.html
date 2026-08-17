@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer — NationalRegionB Admin</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/logos/favicon.svg">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+<div class="page-loader" id="page-loader" role="status" aria-live="polite">
+    <div class="pl-inner">
+      <div class="pl-orbit">
+        <span class="pl-ring"></span>
+        <span class="pl-ring pl-ring--2"></span>
+        <span class="pl-ring pl-ring--3"></span>
+        <span class="pl-core"></span>
+      </div>
+      <div class="pl-track"><span class="pl-progress"></span></div>
+      <p class="pl-status" id="pl-status">Preparing your workspace</p>
+    </div>
+  </div>
+  <div id="page-root">
+    <div id="masthead"><div class="loading-block"><div class="spinner"></div><span>Loading customer...</span></div></div>
+    <div class="customer-tabs" id="customer-tabs">
+      <button data-tab="profile" class="active">Profile</button>
+      <button data-tab="accounts">Accounts</button>
+      <button data-tab="transactions">Transactions</button>
+      <button data-tab="transfers">Transfers</button>
+      <button data-tab="deposits">Deposits</button>
+      <button data-tab="cards">Cards</button>
+      <button data-tab="swaps">Swaps</button>
+      <button data-tab="loans">Loans</button>
+      <button data-tab="notifications">Notifications</button>
+    </div>
+    <div id="tab-content"><div class="loading-block"><div class="spinner"></div><span>Loading...</span></div></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/supabase.js"></script>
+  <script src="../js/admin/auth.js"></script>
+  <script src="../js/admin/customer.js"></script>
+</body>
+</html>

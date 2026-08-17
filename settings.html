@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — NationalRegionB</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logos/favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div class="page-loader" id="page-loader" role="status" aria-live="polite">
+    <div class="pl-inner">
+      <div class="pl-orbit">
+        <span class="pl-ring"></span>
+        <span class="pl-ring pl-ring--2"></span>
+        <span class="pl-ring pl-ring--3"></span>
+        <span class="pl-core"></span>
+      </div>
+      <div class="pl-track"><span class="pl-progress"></span></div>
+      <p class="pl-status" id="pl-status">Preparing your workspace</p>
+    </div>
+  </div>
+  <div id="page-root">
+    <div class="grid-2" style="align-items:start">
+      <div class="card">
+        <h3 class="card-title mb-3">Security & password</h3>
+        <div class="field"><label>Current password</label><input type="password" class="input" id="pw-current"></div>
+        <div class="field"><label>New password</label>
+          <div class="password-wrap"><input type="password" class="input" id="pw-new" placeholder="Min. 8 characters"><button type="button" class="toggle-pw" data-target="pw-new">👁</button></div>
+        </div>
+        <div class="field"><label>Confirm new password</label>
+          <div class="password-wrap"><input type="password" class="input" id="pw-confirm"><button type="button" class="toggle-pw" data-target="pw-confirm">👁</button></div>
+        </div>
+        <div class="form-error" id="pw-error"></div>
+        <button class="btn btn-primary" id="pw-save">Update Password</button>
+        <div class="review-panel mt-3">
+          <div class="detail-grid">
+            <div class="detail-item"><div class="k">Signed in as</div><div class="v" id="sec-email">—</div></div>
+            <div class="detail-item"><div class="k">User ID</div><div class="v text-xs" id="sec-uid">—</div></div>
+            <div class="detail-item"><div class="k">Last sign in</div><div class="v" id="sec-last">—</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card mb-3">
+          <h3 class="card-title mb-3">Notification preferences</h3>
+          <div id="pref-list"><div class="loading-block"><div class="spinner spinner-sm"></div></div></div>
+          <button class="btn btn-primary mt-3" id="pref-save">Save Preferences</button>
+        </div>
+        <div class="card">
+          <h3 class="card-title mb-2">Sessions</h3>
+          <p class="text-sm text-muted">Your session is managed securely by the platform. Expired sessions automatically return you to the login page.</p>
+          <button class="btn btn-outline btn-sm" id="sec-signout">Log out of all sessions</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/settings.js"></script>
+</body>
+</html>

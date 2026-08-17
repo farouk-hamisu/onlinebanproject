@@ -1,0 +1,42 @@
+/* ============================================================
+   NationalRegionB — tables.css
+   ============================================================ */
+
+.table-wrap { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.table-wrap table.table { border-radius: var(--radius); }
+.table-wrap .table-heading {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px;
+  border-bottom: 1px solid var(--border); background: var(--surface-2); flex-wrap: wrap;
+}
+.table-wrap .table-heading h3 { font-size: 15px; margin: 0; }
+
+.table-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.table-actions .btn { padding: 7px 12px; font-size: 13px; }
+
+td .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.row-action {
+  width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: border-color .15s, color .15s;
+}
+.row-action:hover { border-color: var(--accent); color: var(--accent); }
+.row-action.danger:hover { border-color: var(--danger); color: var(--danger); }
+.row-action.success:hover { border-color: var(--success); color: var(--success); }
+
+/* summary chips in tables */
+.cell-main { font-weight: 600; }
+.cell-sub { font-size: 12px; color: var(--muted); }
+
+/* sortable headers */
+.table th.sortable { cursor: pointer; user-select: none; }
+.table th.sortable:hover { color: var(--text-2); }
+.table th .sort-arrow { font-size: 10px; margin-left: 4px; opacity: .6; }
+
+/* totals row */
+.table tfoot td { font-weight: 700; background: var(--surface-2); border-top: 2px solid var(--border); }
+
+/* responsive filter toggle */
+.filters-collapse { display: none; }
+@media (max-width: 640px) {
+  .filters-collapse { display: block; }
+  .filter-bar.responsive-hidden { display: none; }
+}

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Transfer — NationalRegionB</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logos/favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div class="page-loader" id="page-loader" role="status" aria-live="polite">
+    <div class="pl-inner">
+      <div class="pl-orbit">
+        <span class="pl-ring"></span>
+        <span class="pl-ring pl-ring--2"></span>
+        <span class="pl-ring pl-ring--3"></span>
+        <span class="pl-core"></span>
+      </div>
+      <div class="pl-track"><span class="pl-progress"></span></div>
+      <p class="pl-status" id="pl-status">Preparing your workspace</p>
+    </div>
+  </div>
+  <div id="page-root">
+    <div class="step-flow">
+      <div class="step-pill active" data-step="1"><span class="num">1</span> Recipient</div><div class="step-line"></div>
+      <div class="step-pill" data-step="2"><span class="num">2</span> Amount</div><div class="step-line"></div>
+      <div class="step-pill" data-step="3"><span class="num">3</span> Review</div><div class="step-line"></div>
+      <div class="step-pill" data-step="4"><span class="num">4</span> Confirm</div>
+    </div>
+
+    <div id="step-1" class="card">
+      <h3 class="card-title mb-2">Who are you sending money to?</h3>
+      <div class="flex-between mb-3">
+        <select class="select" id="beneficiary-select" style="max-width:420px"><option value="">Select a saved beneficiary...</option></select>
+        <button class="btn btn-outline btn-sm" id="btn-new-benef">+ New Beneficiary</button>
+      </div>
+      <div id="benef-form" class="hide">
+        <div class="form-grid">
+          <div class="field"><label>Recipient name</label><input type="text" class="input" id="r-name"></div>
+          <div class="field"><label>Account number</label><input type="text" class="input" id="r-account"></div>
+          <div class="field"><label>Bank name</label><input type="text" class="input" id="r-bank" placeholder="NationalRegionB"></div>
+          <div class="field"><label>Currency</label><select class="select" id="r-currency"></select></div>
+        </div>
+        <button class="btn btn-outline btn-sm mb-3" id="btn-save-benef">Save Beneficiary</button>
+      </div>
+      <div class="form-error" id="step1-error"></div>
+      <div class="flex-between mt-3"><span></span><button class="btn btn-primary" id="step1-next">Continue</button></div>
+    </div>
+
+    <div id="step-2" class="card hide">
+      <h3 class="card-title mb-2">Transfer amount</h3>
+      <div class="form-grid">
+        <div class="field"><label>From account</label><select class="select" id="t-from"></select></div>
+        <div class="field"><label>Available balance</label><div class="input" id="t-balance" disabled>—</div></div>
+        <div class="field"><label>Amount</label>
+          <div class="amount-field"><input type="number" class="input" id="t-amount" min="0.01" step="0.01" placeholder="0.00"><span class="currency-tag" id="t-currency-tag">$</span></div>
+        </div>
+        <div class="field"><label>Description <span class="text-muted">(optional)</span></label><input type="text" class="input" id="t-desc" placeholder="e.g. Rent payment"></div>
+      </div>
+      <div class="review-panel">
+        <div class="flex-between"><span class="text-muted">Transfer fee</span><strong>$0.00</strong></div>
+        <div class="review-total"><span>You will send</span><strong id="t-total">$0.00</strong></div>
+      </div>
+      <div class="form-error" id="step2-error"></div>
+      <div class="flex-between mt-3"><button class="btn btn-outline" id="step2-back">Back</button><button class="btn btn-primary" id="step2-next">Continue</button></div>
+    </div>
+
+    <div id="step-3" class="card hide">
+      <h3 class="card-title mb-2">Review your transfer</h3>
+      <div class="review-panel">
+        <div class="detail-grid">
+          <div class="detail-item"><div class="k">Recipient</div><div class="v" id="rv-name">—</div></div>
+          <div class="detail-item"><div class="k">Account number</div><div class="v" id="rv-account">—</div></div>
+          <div class="detail-item"><div class="k">Bank</div><div class="v" id="rv-bank">—</div></div>
+          <div class="detail-item"><div class="k">From account</div><div class="v" id="rv-from">—</div></div>
+          <div class="detail-item"><div class="k">Amount</div><div class="v" id="rv-amount">—</div></div>
+          <div class="detail-item"><div class="k">Description</div><div class="v" id="rv-desc">—</div></div>
+        </div>
+      </div>
+      <div class="flex-between"><button class="btn btn-outline" id="step3-back">Back</button><button class="btn btn-primary" id="step3-next">Confirm & Send</button></div>
+    </div>
+
+    <div id="step-4" class="card hide text-center">
+      <div style="font-size:44px;color:var(--success)">✓</div>
+      <h3 class="card-title">Transfer submitted successfully</h3>
+      <p class="text-muted">Your transfer has been processed and a transaction reference has been generated.</p>
+      <div class="review-panel" style="max-width:420px;margin:0 auto">
+        <div class="detail-grid">
+          <div class="detail-item"><div class="k">Reference</div><div class="v" id="done-ref">—</div></div>
+          <div class="detail-item"><div class="k">Status</div><div class="v"><span class="badge badge-completed">Completed</span></div></div>
+          <div class="detail-item"><div class="k">Amount</div><div class="v" id="done-amount">—</div></div>
+          <div class="detail-item"><div class="k">Recipient</div><div class="v" id="done-name">—</div></div>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-3" style="justify-content:center">
+        <a href="transactions.html" class="btn btn-outline">View Transactions</a>
+        <a href="dashboard.html" class="btn btn-primary">Back to Dashboard</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/local-transfer.js"></script>
+</body>
+</html>

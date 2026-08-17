@@ -1,0 +1,39 @@
+/* ============================================================
+   NationalRegionB — responsive.css
+   Extra responsive behaviors layered on style.css
+   ============================================================ */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-visual { margin-top: 12px; }
+  .filter-bar .input, .filter-bar .select { min-width: 140px; flex: 1; }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .container { padding: 0 16px; }
+  .section { padding: 44px 0; }
+
+  /* tables -> cards on small screens is handled by marking .table-responsive-card */
+  table.table.mobile-cards, table.table.mobile-cards thead { display: block; }
+  table.table.mobile-cards tbody, table.table.mobile-cards tr, table.table.mobile-cards td { display: block; width: 100%; }
+  table.table.mobile-cards thead { display: none; }
+  table.table.mobile-cards tbody tr { border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 10px; box-shadow: var(--shadow-sm); }
+  table.table.mobile-cards td { border-bottom: none; padding: 7px 10px; display: flex; justify-content: space-between; gap: 12px; text-align: right; }
+  table.table.mobile-cards td::before { content: attr(data-label); font-weight: 700; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; text-align: left; }
+
+  .cta-band { padding: 34px 20px; }
+  .cta-band h2 { font-size: 24px; }
+  .hero-stats { gap: 24px; }
+  .modal-backdrop { padding: 16px; }
+  .modal { border-radius: 10px; }
+  .app-header .hdr-title { font-size: 15px; }
+  .user-chip .user-chip-name { display: none; }
+}
+
+/* Small phones */
+@media (max-width: 420px) {
+  .quick-actions { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .auth-card { padding: 26px 20px; }
+}

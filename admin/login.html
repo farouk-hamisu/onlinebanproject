@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login — NationalRegionB</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/logos/favicon.svg">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="auth-body admin-login-body">
+  <div class="auth-box">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <img src="../assets/logos/logo.svg" alt="NationalRegionB">
+        <span class="label">Administrator Portal</span>
+        <h1>Admin Sign In</h1>
+      </div>
+      <p class="auth-sub">Restricted area. Authorized personnel only.</p>
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="email">Admin email</label>
+          <input type="email" class="input" id="email" placeholder="admin@nationalregionb.com" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="password-wrap">
+            <input type="password" class="input" id="password" placeholder="Enter your password" autocomplete="current-password" required>
+            <button type="button" class="toggle-pw" data-target="password">👁</button>
+          </div>
+        </div>
+        <div class="form-error" id="login-error"></div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block" id="login-btn">Sign In</button>
+      </form>
+      <p class="auth-alt"><a href="../index.html">← Back to website</a></p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/supabase.js"></script>
+  <script src="../js/admin/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      AdminAuth.validate().then(function (a) {
+        if (a) window.location.href = 'dashboard.html';
+      });
+      document.getElementById('login-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const errEl = document.getElementById('login-error');
+        errEl.textContent = '';
+        const btn = document.getElementById('login-btn');
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        if (!email || !password) { errEl.textContent = 'Enter your email and password.'; return; }
+        btn.disabled = true;
+        btn.textContent = 'Signing in...';
+        try {
+          await AdminAuth.login(email, password);
+          UI.toast('Welcome back, ' + AdminAuth.admin.full_name + '!', 'success');
+          window.location.href = 'dashboard.html';
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Sign In';
+          errEl.textContent = UI.apiErrorMessage(err);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

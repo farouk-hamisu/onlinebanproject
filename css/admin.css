@@ -1,0 +1,97 @@
+/* ============================================================
+   NationalRegionB — admin.css
+   Admin portal specific styling
+   ============================================================ */
+
+.admin-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 1024px) { .admin-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .admin-stats { grid-template-columns: 1fr; } }
+
+.admin-stat {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px;
+  display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-sm);
+}
+.admin-stat .as-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: none; }
+.admin-stat .as-icon svg { width: 20px; height: 20px; }
+.admin-stat .as-value { font-size: 20px; font-weight: 800; line-height: 1.2; }
+.admin-stat .as-label { font-size: 12px; color: var(--muted); }
+
+.as-blue { background: var(--info-soft); color: var(--info); }
+.as-green { background: var(--success-soft); color: var(--success); }
+.as-red { background: var(--danger-soft); color: var(--danger); }
+.as-amber { background: var(--warning-soft); color: var(--warning); }
+
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .admin-grid { grid-template-columns: 1fr; } }
+
+/* user detail / customer management layout */
+.customer-masthead {
+  background: linear-gradient(120deg, var(--primary), #1c4f9c); color: #fff; border-radius: var(--radius);
+  padding: 26px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 24px;
+}
+.customer-masthead .avatar { width: 64px; height: 64px; font-size: 26px; background: rgba(255,255,255,.2); color: #fff; }
+.customer-masthead h2 { color: #fff; margin: 0; }
+.customer-masthead .cm-meta { color: rgba(255,255,255,.8); font-size: 13px; }
+.customer-masthead .cm-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+.customer-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 24px; overflow-x: auto; }
+.customer-tabs button {
+  padding: 10px 16px; border: none; background: none; font-size: 14px; font-weight: 600; color: var(--muted);
+  cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap;
+}
+.customer-tabs button.active { color: var(--primary); border-bottom-color: var(--accent); }
+
+/* admin login */
+.admin-login-body { background: linear-gradient(135deg, #0f2239, #123a7e); }
+.admin-login-body .auth-brand span.label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+
+/* audit log */
+.audit-action { font-weight: 600; }
+.audit-action.CREATE { color: var(--info); }
+.audit-action.UPDATE, .audit-action.UPDATE_STATUS { color: var(--warning); }
+.audit-action.DELETE { color: var(--danger); }
+.audit-action.REVERSE { color: var(--danger); }
+
+/* value diff in audit */
+.value-diff pre { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 11px; overflow-x: auto; margin: 0; }
+
+/* admin sidebar badge for super admin */
+.admin-role-badge { font-size: 11px; background: var(--gold); color: #fff; border-radius: 999px; padding: 1px 8px; margin-left: 8px; }
+/* settings */
+.settings-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+.settings-form .field { margin-bottom: 16px; }
+@media (max-width: 640px) { .settings-form { grid-template-columns: 1fr; } }
+
+/* json preview in audit log detail */
+.json-preview { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; white-space: pre-wrap; word-break: break-word; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-weight: 400; }
+
+/* ============================================================
+   Polish (visual-only refinements; no markup changes)
+   ============================================================ */
+
+/* admin stat cards */
+.admin-stat { transition: transform .16s ease, box-shadow .16s ease; }
+.admin-stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.admin-stat .as-icon { border-radius: 14px; }
+.admin-stat .as-value { letter-spacing: -.02em; font-size: 22px; }
+.admin-stat .as-label { font-weight: 600; }
+
+/* tables */
+.table-wrap { box-shadow: var(--shadow-sm); }
+.table tbody tr:hover td { background: var(--surface-2); }
+.table td .cell-main, .table td { font-size: 13.5px; }
+.table tbody tr { transition: background .12s ease; }
+
+/* customer tabs + masthead */
+.customer-tabs button { transition: color .15s ease; }
+.customer-tabs button:hover { color: var(--text); }
+.customer-masthead h2 { letter-spacing: -.01em; }
+
+/* badges refinement */
+.badge { font-weight: 700; letter-spacing: .01em; }
+
+/* buttons in admin */
+.table-actions .btn { border-radius: 8px; }
+
+/* charts */
+.chart-box { height: 260px; }

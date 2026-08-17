@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log In — NationalRegionB</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logos/favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/marketing.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/forms.css">
+</head>
+<body>
+  <div class="mk-auth">
+    <div class="mk-auth-visual" style="background-image:url('assets/images/phone-hand.jpg')">
+      <div class="mk-auth-float mk-auth-float--tr">
+        <div class="mk-f-icon mk-f-icon--green"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></div>
+        <div><b>Transfer received</b><span>+$1,240.00 · just now</span></div>
+      </div>
+      <div class="mk-auth-float mk-auth-float--bl">
+        <div class="mk-f-icon mk-f-icon--gold"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg></div>
+        <div><b>Card active</b><span>4532 •••• 0366</span></div>
+      </div>
+      <span class="mk-overline">Welcome back</span>
+      <h2 class="mk-h2">Your money, under control.</h2>
+      <p class="mk-lead">Check balances, send money and manage your cards — all from one secure dashboard.</p>
+    </div>
+    <div class="mk-auth-panel">
+      <div class="mk-auth-card">
+        <div class="mk-auth-brand">
+          <img src="assets/logos/logo.svg" alt="NationalRegionB">
+        </div>
+        <h1>Welcome back</h1>
+        <p class="mk-auth-sub">Log in to your banking dashboard</p>
+        <form id="login-form" novalidate>
+          <div class="field">
+            <label for="email">Email address</label>
+            <input type="email" class="input" id="email" placeholder="you@example.com" autocomplete="email" required>
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="password-wrap">
+              <input type="password" class="input" id="password" placeholder="Enter your password" autocomplete="current-password" required>
+              <button type="button" class="toggle-pw" data-target="password">👁</button>
+            </div>
+          </div>
+          <div class="flex-between mb-2">
+            <label class="switch text-sm"><input type="checkbox" id="remember"><span class="track"></span> Remember me</label>
+            <a href="forgot-password.html" class="text-sm">Forgot password?</a>
+          </div>
+          <div class="form-error" id="login-error"></div>
+          <button type="submit" class="btn btn-primary btn-lg btn-block" id="login-btn" style="border-radius:14px;font-weight:700">Log In</button>
+        </form>
+        <div id="pin-step" style="display:none">
+          <p class="mk-auth-sub">Enter your 4-digit security PIN to finish signing in</p>
+          <div id="pin-container"></div>
+          <div class="form-error" id="pin-error"></div>
+          <button type="button" class="btn btn-outline btn-lg btn-block" id="pin-cancel" style="border-radius:14px;font-weight:600;margin-top:8px">Use a different account</button>
+        </div>
+        <p class="auth-alt">Don't have an account? <a href="register.html">Open one now</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      Auth.redirectIfAuthed();
+
+      // password visibility toggle
+      document.querySelectorAll('.toggle-pw').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const input = document.getElementById(btn.getAttribute('data-target'));
+          input.type = input.type === 'password' ? 'text' : 'password';
+          btn.textContent = input.type === 'password' ? '👁' : '🙈';
+        });
+      });
+
+      document.getElementById('login-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const errEl = document.getElementById('login-error');
+        errEl.textContent = '';
+        const btn = document.getElementById('login-btn');
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        if (!email || !password) { errEl.textContent = 'Please enter your email and password.'; return; }
+        btn.disabled = true;
+        btn.textContent = 'Logging in...';
+        try {
+          await Auth.signIn(email, password);
+          await showPinStep();
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Log In';
+          errEl.textContent = UI.apiErrorMessage(err);
+        }
+      });
+
+      async function showPinStep() {
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('pin-step').style.display = 'block';
+        const errEl = document.getElementById('pin-error');
+        const pinContainer = document.getElementById('pin-container');
+        pinContainer.innerHTML = UI.pinBoxesHTML('login-pin-boxes');
+
+        let hasPin = true;
+        try {
+          hasPin = await UI.rpc('customer_has_pin', {});
+        } catch (e) {
+          hasPin = true;
+        }
+        if (hasPin === false) {
+          UI.toast('Set a security PIN to secure your account.', 'info');
+          window.location.href = 'setup-pin.html';
+          return;
+        }
+
+        const controller = UI.mountPinInput(pinContainer.querySelector('.pin-inputs'), {
+          onComplete: async function (pin) {
+            errEl.textContent = '';
+            try {
+              const res = await UI.verifyCustomerPin(pin);
+              if (res.ok) {
+                UI.toast('Welcome back!', 'success');
+                const next = new URLSearchParams(window.location.search).get('next');
+                window.location.href = next || 'dashboard.html';
+              } else if (res.notSet) {
+                window.location.href = 'setup-pin.html';
+              } else {
+                controller.clear();
+                errEl.textContent = res.message || 'Incorrect PIN.';
+              }
+            } catch (e2) {
+              controller.clear();
+              errEl.textContent = UI.apiErrorMessage(e2);
+            }
+          }
+        });
+        document.getElementById('pin-cancel').addEventListener('click', function () {
+          Auth.logout();
+        });
+        controller.focusFirst();
+      }
+    });
+  </script>
+</body>
+</html>

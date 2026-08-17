@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Withdrawal — NationalRegionB</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logos/favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div class="page-loader" id="page-loader" role="status" aria-live="polite">
+    <div class="pl-inner">
+      <div class="pl-orbit">
+        <span class="pl-ring"></span>
+        <span class="pl-ring pl-ring--2"></span>
+        <span class="pl-ring pl-ring--3"></span>
+        <span class="pl-core"></span>
+      </div>
+      <div class="pl-track"><span class="pl-progress"></span></div>
+      <p class="pl-status" id="pl-status">Preparing your workspace</p>
+    </div>
+  </div>
+  <div id="page-root">
+    <div id="crypto-form" class="card">
+      <h3 class="card-title mb-2">Crypto withdrawal</h3>
+      <p class="text-muted mb-3">Withdraw cryptocurrency. Withdrawals are released once a one-time verification code is entered.</p>
+      <div class="form-grid">
+        <div class="field"><label>From account</label><select class="select" id="w-account"></select></div>
+        <div class="field"><label>Available balance</label><div class="input" id="w-balance" disabled>—</div></div>
+        <div class="field"><label>Asset / network</label><select class="select" id="w-asset"></select></div>
+        <div class="field"><label>Wallet address</label><input type="text" class="input" id="w-wallet" placeholder="Recipient wallet address" spellcheck="false"></div>
+        <div class="field"><label>Amount to withdraw</label>
+          <div class="amount-field"><input type="number" class="input" id="w-amount" min="0.00000001" step="any" placeholder="0.00"><span class="currency-tag" id="w-asset-tag">BTC</span></div>
+        </div>
+      </div>
+      <div class="review-panel mt-3">
+        <div class="flex-between"><span class="text-muted">Exchange rate</span><strong id="w-rate">—</strong></div>
+        <div class="flex-between"><span class="text-muted">Fee</span><strong id="w-fee">—</strong></div>
+        <div class="review-total"><span>Total debited</span><strong id="w-total">$0.00</strong></div>
+      </div>
+      <div class="form-error" id="w-error"></div>
+      <div class="flex-between mt-3"><span></span><button class="btn btn-primary" id="w-submit">Confirm &amp; Submit</button></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/crypto-withdrawal.js"></script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — NationalRegionB</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logos/favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div class="page-loader" id="page-loader" role="status" aria-live="polite">
+    <div class="pl-inner">
+      <div class="pl-orbit">
+        <span class="pl-ring"></span>
+        <span class="pl-ring pl-ring--2"></span>
+        <span class="pl-ring pl-ring--3"></span>
+        <span class="pl-core"></span>
+      </div>
+      <div class="pl-track"><span class="pl-progress"></span></div>
+      <p class="pl-status" id="pl-status">Preparing your workspace</p>
+    </div>
+  </div>
+  <div id="page-root">
+    <div class="dash-grid">
+      <div class="dash-main-col">
+        <div id="balance-cards"><div class="loading-block"><div class="spinner"></div><span>Loading balances...</span></div></div>
+        <div class="quick-actions">
+          <a class="quick-action" href="local-transfer.html"><div class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M15 6l5 6-5 6"/></svg></div><span>Transfer</span></a>
+          <a class="quick-action" href="deposits.html"><div class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14"/><path d="M6 13l6 6 6-6"/><path d="M4 21h16"/></svg></div><span>Deposit</span></a>
+          <a class="quick-action" href="currency-swap.html"><div class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L4 7l4 4"/><path d="M4 7h16"/><path d="M16 21l4-4-4-4"/><path d="M20 17H4"/></svg></div><span>Swap Currency</span></a>
+          <a class="quick-action" href="loans.html"><div class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><rect x="7" y="9" width="3" height="7" rx="1"/><rect x="12" y="6" width="3" height="10" rx="1"/><rect x="17" y="12" width="3" height="4" rx="1"/></svg></div><span>Apply for Loan</span></a>
+        </div>
+        <div class="card mb-3" id="pending-verification-card">
+          <div class="card-header">
+            <div><h3 class="card-title">Pending Verifications</h3><div class="card-subtitle">Transfers waiting for your one-time verification code</div></div>
+            <a href="transfers.html" class="btn btn-outline btn-sm">View All</a>
+          </div>
+          <div id="pending-verifications"><div class="loading-block"><div class="spinner"></div><span>Checking pending transfers...</span></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div><h3 class="card-title">Cash Flow</h3><div class="card-subtitle">Income vs spending — last 6 months</div></div>
+            <div class="chart-legend">
+              <span class="lg"><span class="swatch" style="background:#2f7de1"></span> Income</span>
+              <span class="lg"><span class="swatch" style="background:#1a9e5a"></span> Spending</span>
+            </div>
+          </div>
+          <div class="chart-box"><canvas id="flow-chart" height="240"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div><h3 class="card-title">Recent Transactions</h3><div class="card-subtitle">Your latest account activity</div></div>
+            <a href="transactions.html" class="btn btn-outline btn-sm">View All</a>
+          </div>
+          <div id="recent-tx"><div class="loading-block"><div class="spinner"></div><span>Loading transactions...</span></div></div>
+        </div>
+      </div>
+      <div class="dash-side-col">
+        <div class="card card-showcase">
+          <div class="card-header"><div><h3 class="card-title">My Cards</h3></div><a href="cards.html" class="text-sm">Manage</a></div>
+          <div id="card-showcase"><div class="loading-block"><div class="spinner spinner-sm"></div></div></div>
+        </div>
+        <div class="card loan-summary">
+          <div class="card-header"><div><h3 class="card-title">Loans</h3></div><a href="loans.html" class="text-sm">Details</a></div>
+          <div id="loan-summary"><div class="loading-block"><div class="spinner spinner-sm"></div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><h3 class="card-title">Notifications</h3></div><a href="notifications.html" class="text-sm">View all</a></div>
+          <div id="notif-summary"><div class="loading-block"><div class="spinner spinner-sm"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
