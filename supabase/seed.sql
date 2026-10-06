@@ -15,7 +15,7 @@ insert into public.currencies (code, name, symbol, is_base, enabled) values
   ('EUR', 'Euro',          '€',  false, true),
   ('GBP', 'British Pound', '£',  false, true),
   ('NGN', 'Nigerian Naira','₦',  false, true),
-  ('CAD', 'Canadian Dollar','C$', false, true);
+  ('CAD', 'Canadian Dollar','C$', false, true) on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Exchange rates (base -> quote)
@@ -28,16 +28,20 @@ insert into public.exchange_rates (base_currency, quote_currency, rate, fee_perc
   ('EUR', 'USD', 1.0870, 0.50),
   ('GBP', 'USD', 1.2660, 0.50),
   ('NGN', 'USD', 0.00063, 1.00),
-  ('CAD', 'USD', 0.7300, 0.50);
+  ('CAD', 'USD', 0.7300, 0.50) on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Loan products
 -- ---------------------------------------------------------------------------
-insert into public.loan_products (name, description, min_amount, max_amount, interest_rate, term_months, enabled) values
-  ('Personal Loan', 'Flexible personal loan for your everyday needs.', 500, 50000, 5.50, 12, true),
-  ('Auto Loan', 'Finance your next vehicle with competitive rates.', 2000, 80000, 4.75, 60, true),
-  ('Home Improvement', 'Upgrade and renovate your home.', 5000, 200000, 4.25, 84, true),
-  ('Business Loan', 'Working capital to grow your business.', 10000, 500000, 6.25, 48, true);
+insert into public.loan_products (name, description, min_amount, max_amount, interest_rate, term_months, enabled)
+select v.name, v.description, v.min_amount, v.max_amount, v.interest_rate, v.term_months, v.enabled
+from (values
+  ('Personal Loan', 'Flexible personal loan for your everyday needs.', 500::numeric, 50000::numeric, 5.50::numeric, 12, true),
+  ('Auto Loan', 'Finance your next vehicle with competitive rates.', 2000::numeric, 80000::numeric, 4.75::numeric, 60, true),
+  ('Home Improvement', 'Upgrade and renovate your home.', 5000::numeric, 200000::numeric, 4.25::numeric, 84, true),
+  ('Business Loan', 'Working capital to grow your business.', 10000::numeric, 500000::numeric, 6.25::numeric, 48, true)
+) as v(name, description, min_amount, max_amount, interest_rate, term_months, enabled)
+where not exists (select 1 from public.loan_products lp where lp.name = v.name);
 
 -- ---------------------------------------------------------------------------
 -- Admin roles
@@ -65,14 +69,14 @@ insert into public.admin_roles (name, permissions) values
   ('finance', array[
     'dashboard','transactions.view','transactions.manage','transfers.view','transfers.manage',
     'deposits.view','deposits.manage','currencies.view','currencies.manage','loans.view','loans.manage'
-  ]);
+  ]) on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Admin users (password hashed at seed time)
 -- ---------------------------------------------------------------------------
 insert into public.admin_users (email, password_hash, full_name, role_id, status)
 select 'admin@nationalregionb.com', public.admin_hash_password('Admin@123'), 'System Administrator', r.id, 'active'
-from public.admin_roles r where r.name = 'super_admin';
+from public.admin_roles r where r.name = 'super_admin' on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- System settings
@@ -83,7 +87,7 @@ insert into public.system_settings (key, value, description) values
   ('local_transfer_fee', '0', 'Flat local transfer fee'),
   ('intl_transfer_fee', '15', 'Flat international transfer fee'),
   ('swap_fee_percent', '0.5', 'Default currency swap fee percentage'),
-  ('maintenance_mode', 'false', 'Maintenance mode flag');
+  ('maintenance_mode', 'false', 'Maintenance mode flag') on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Demo customer
@@ -100,7 +104,7 @@ insert into auth.users (
   jsonb_build_object('provider', 'email', 'providers', '["email"]'),
   jsonb_build_object('full_name', 'Alex Morgan'),
   now(), now(), '', '', '', ''
-);
+) on conflict do nothing;
 
 insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
 values (
@@ -109,7 +113,7 @@ values (
   '00000000-0000-0000-0000-000000000001',
   jsonb_build_object('sub', '00000000-0000-0000-0000-000000000001', 'email', 'demo@nationalregionb.com'),
   'email', now(), now(), now()
-);
+) on conflict do nothing;
 
 insert into public.profiles (id, email, full_name, phone, avatar_url, address, city, country, status, kyc_status, date_of_birth)
 values (
@@ -125,12 +129,12 @@ on conflict (id) do update set
 insert into public.accounts (id, user_id, account_number, account_name, account_type, currency, status) values
   ('00000000-0000-0000-0000-000000000101', '00000000-0000-0000-0000-000000000001', '4800000000000011', 'Alex Morgan', 'checking', 'USD', 'active'),
   ('00000000-0000-0000-0000-000000000102', '00000000-0000-0000-0000-000000000001', '4800000000000012', 'Alex Morgan Savings', 'savings', 'USD', 'active'),
-  ('00000000-0000-0000-0000-000000000103', '00000000-0000-0000-0000-000000000001', '4800000000000013', 'Alex Morgan Euro', 'checking', 'EUR', 'active');
+  ('00000000-0000-0000-0000-000000000103', '00000000-0000-0000-0000-000000000001', '4800000000000013', 'Alex Morgan Euro', 'checking', 'EUR', 'active') on conflict do nothing;
 
 insert into public.account_balances (account_id, available_balance, ledger_balance, currency) values
   ('00000000-0000-0000-0000-000000000101', 24750.32, 25900.32, 'USD'),
   ('00000000-0000-0000-0000-000000000102', 18750.00, 18750.00, 'USD'),
-  ('00000000-0000-0000-0000-000000000103', 3250.00, 3250.00, 'EUR');
+  ('00000000-0000-0000-0000-000000000103', 3250.00, 3250.00, 'EUR') on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Beneficiaries
@@ -138,7 +142,7 @@ insert into public.account_balances (account_id, available_balance, ledger_balan
 insert into public.beneficiaries (user_id, name, bank_name, account_number, country, currency, is_international) values
   ('00000000-0000-0000-0000-000000000001', 'Jordan Blake', 'NationalRegionB', '4800000000000022', 'United States', 'USD', false),
   ('00000000-0000-0000-0000-000000000001', 'Sophia Carter', 'NationalRegionB', '4800000000000023', 'United States', 'USD', false),
-  ('00000000-0000-0000-0000-000000000001', 'Liam O''Connor', 'Deutsche Bank', 'DE89370400440532013000', 'Germany', 'EUR', true);
+  ('00000000-0000-0000-0000-000000000001', 'Liam O''Connor', 'Deutsche Bank', 'DE89370400440532013000', 'Germany', 'EUR', true) on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Transactions
@@ -148,24 +152,24 @@ insert into public.transactions (reference, user_id, account_id, type, direction
   ('NTB-LT0001',  '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 'local_transfer', 'debit', 1200.00, 'USD', 0, 'completed', 'Rent payment', 'Alex Morgan', 'Jordan Blake', now() - interval '3 days'),
   ('NTB-SW0001',  '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 'currency_swap', 'debit', 2000.00, 'USD', 10.00, 'completed', 'Currency swap USD to EUR', 'Alex Morgan', 'USD -> EUR', now() - interval '5 days'),
   ('NTB-CTX0001', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 'withdrawal', 'debit', 89.50, 'USD', 0, 'completed', 'ATM withdrawal', 'Alex Morgan', 'ATM', now() - interval '6 days'),
-  ('NTB-DEP0002', '00000000-0000-0000-0000-000000000101', '00000000-0000-0000-0000-000000000101', 'deposit', 'credit', 250.00, 'USD', 0, 'completed', 'Cash deposit', 'Cash Deposit', 'Alex Morgan', now() - interval '7 days'),
+  ('NTB-DEP0002', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 'deposit', 'credit', 250.00, 'USD', 0, 'completed', 'Cash deposit', 'Cash Deposit', 'Alex Morgan', now() - interval '7 days'),
   ('NTB-CTX0002', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 'withdrawal', 'debit', 154.20, 'USD', 0, 'completed', 'Online purchase', 'Whole Foods Market', 'Alex Morgan', now() - interval '8 days'),
   ('NTB-CTX0003', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 'withdrawal', 'debit', 320.00, 'USD', 0, 'completed', 'Online purchase', 'Apple Inc.', 'Alex Morgan', now() - interval '10 days'),
-  ('NTB-LT0002',  '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 'local_transfer', 'debit', 450.00, 'USD', 0, 'pending', 'Utilities payment', 'Alex Morgan', 'Pacific Gas & Electric', now() - interval '1 hour');
+  ('NTB-LT0002',  '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 'local_transfer', 'debit', 450.00, 'USD', 0, 'pending', 'Utilities payment', 'Alex Morgan', 'Pacific Gas & Electric', now() - interval '1 hour') on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Cards
 -- ---------------------------------------------------------------------------
-insert into public.cards (user_id, account_id, card_number, masked_number, card_holder, card_type, card_brand, expiry_month, expiry_year, cvv, spending_limit, status) values
-  ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', '4532015112830366', '4532 •••• •••• 0366', 'Alex Morgan', 'debit', 'visa', 8, 2028, '112', 10000.00, 'active'),
-  ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', '5391182039442218', '5391 •••• •••• 2218', 'Alex Morgan', 'credit', 'mastercard', 3, 2029, '334', 15000.00, 'active'),
-  ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000102', '4716880123456789', '4716 •••• •••• 6789', 'Alex Morgan', 'virtual', 'visa', 12, 2027, '558', 5000.00, 'frozen');
+insert into public.cards (id, user_id, account_id, card_number, masked_number, card_holder, card_type, card_brand, expiry_month, expiry_year, cvv, spending_limit, status) values
+  ('00000000-0000-0000-0000-000000000201', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', '4532015112830366', '4532 •••• •••• 0366', 'Alex Morgan', 'debit', 'visa', 8, 2028, '112', 10000.00, 'active'),
+  ('00000000-0000-0000-0000-000000000202', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', '5391182039442218', '5391 •••• •••• 2218', 'Alex Morgan', 'credit', 'mastercard', 3, 2029, '334', 15000.00, 'active'),
+  ('00000000-0000-0000-0000-000000000203', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000102', '4716880123456789', '4716 •••• •••• 6789', 'Alex Morgan', 'virtual', 'visa', 12, 2027, '558', 5000.00, 'frozen') on conflict do nothing;
 
 insert into public.card_transactions (card_id, user_id, merchant, amount, currency, type, status, created_at) values
   ('00000000-0000-0000-0000-000000000201', '00000000-0000-0000-0000-000000000001', 'Whole Foods Market', 154.20, 'USD', 'purchase', 'completed', now() - interval '8 days'),
   ('00000000-0000-0000-0000-000000000201', '00000000-0000-0000-0000-000000000001', 'Starbucks', 12.50, 'USD', 'purchase', 'completed', now() - interval '4 days'),
   ('00000000-0000-0000-0000-000000000201', '00000000-0000-0000-0000-000000000001', 'Uber', 34.80, 'USD', 'online', 'completed', now() - interval '2 days'),
-  ('00000000-0000-0000-0000-000000000202', '00000000-0000-0000-0000-000000000001', 'Amazon', 89.99, 'USD', 'online', 'completed', now() - interval '5 days');
+  ('00000000-0000-0000-0000-000000000202', '00000000-0000-0000-0000-000000000001', 'Amazon', 89.99, 'USD', 'online', 'completed', now() - interval '5 days') on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Deposits
@@ -173,14 +177,14 @@ insert into public.card_transactions (card_id, user_id, merchant, amount, curren
 insert into public.deposits (reference, user_id, account_id, amount, currency, method, note, status, created_at) values
   ('DEP-SEED-0001', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 5000.00, 'USD', 'bank_transfer', 'Monthly salary', 'completed', now() - interval '2 days'),
   ('DEP-SEED-0002', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 250.00, 'USD', 'cash', 'Branch deposit', 'completed', now() - interval '7 days'),
-  ('DEP-SEED-0003', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 1500.00, 'USD', 'bank_transfer', 'Refund', 'pending', now() - interval '30 minutes');
+  ('DEP-SEED-0003', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 1500.00, 'USD', 'bank_transfer', 'Refund', 'pending', now() - interval '30 minutes') on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Currency swaps
 -- ---------------------------------------------------------------------------
 insert into public.currency_swaps (reference, user_id, account_id, from_currency, to_currency, from_amount, to_amount, rate, fee, status, created_at) values
   ('SW-SEED-0001', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 'USD', 'EUR', 2000.00, 1835.00, 0.9200, 10.00, 'completed', now() - interval '5 days'),
-  ('SW-SEED-0002', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000103', 'EUR', 'USD', 500.00, 542.35, 1.0870, 2.50, 'completed', now() - interval '9 days');
+  ('SW-SEED-0002', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000103', 'EUR', 'USD', 500.00, 542.35, 1.0870, 2.50, 'completed', now() - interval '9 days') on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Loans
@@ -191,7 +195,7 @@ insert into public.loan_applications (reference, user_id, product_id, amount, cu
    8000.00, 'USD', 12, 5.50, 687.42, 'Home renovation', 'active', now() - interval '6 months'),
   ('LN-SEED-0002', '00000000-0000-0000-0000-000000000001',
    (select id from public.loan_products where name = 'Auto Loan'),
-   25000.00, 'USD', 48, 4.75, 572.12, 'New car', 'under_review', now() - interval '3 days');
+   25000.00, 'USD', 48, 4.75, 572.12, 'New car', 'under_review', now() - interval '3 days') on conflict do nothing;
 
 insert into public.loan_repayments (loan_application_id, user_id, amount, currency, due_date, paid_at, status, reference) values
   ((select id from public.loan_applications where reference = 'LN-SEED-0001'), '00000000-0000-0000-0000-000000000001', 687.42, 'USD', current_date - interval '5 months', now() - interval '5 months', 'paid', 'RP-SEED-0001'),
@@ -199,7 +203,7 @@ insert into public.loan_repayments (loan_application_id, user_id, amount, curren
   ((select id from public.loan_applications where reference = 'LN-SEED-0001'), '00000000-0000-0000-0000-000000000001', 687.42, 'USD', current_date - interval '3 months', now() - interval '3 months', 'paid', 'RP-SEED-0003'),
   ((select id from public.loan_applications where reference = 'LN-SEED-0001'), '00000000-0000-0000-0000-000000000001', 687.42, 'USD', current_date - interval '2 months', now() - interval '2 months', 'paid', 'RP-SEED-0004'),
   ((select id from public.loan_applications where reference = 'LN-SEED-0001'), '00000000-0000-0000-0000-000000000001', 687.42, 'USD', current_date - interval '1 month', now() - interval '1 month', 'paid', 'RP-SEED-0005'),
-  ((select id from public.loan_applications where reference = 'LN-SEED-0001'), '00000000-0000-0000-0000-000000000001', 687.42, 'USD', current_date + interval '1 month', null, 'scheduled', null);
+  ((select id from public.loan_applications where reference = 'LN-SEED-0001'), '00000000-0000-0000-0000-000000000001', 687.42, 'USD', current_date + interval '1 month', null, 'scheduled', null) on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Notifications
@@ -209,11 +213,11 @@ insert into public.notifications (user_id, title, message, type, is_read, create
   ('00000000-0000-0000-0000-000000000001', 'Deposit received', 'Your deposit of 5,000.00 USD was completed. Ref: DEP-SEED-0001.', 'deposit', true, now() - interval '2 days'),
   ('00000000-0000-0000-0000-000000000001', 'Loan application received', 'Your Auto Loan application (LN-SEED-0002) is under review.', 'loan', false, now() - interval '3 days'),
   ('00000000-0000-0000-0000-000000000001', 'Currency swap completed', 'Swapped 2,000.00 USD to 1,835.00 EUR.', 'swap', false, now() - interval '5 days'),
-  ('00000000-0000-0000-0000-000000000001', 'Card security alert', 'A new device was used to access your account. If this was you, no action is needed.', 'security', false, now() - interval '1 day');
+  ('00000000-0000-0000-0000-000000000001', 'Card security alert', 'A new device was used to access your account. If this was you, no action is needed.', 'security', false, now() - interval '1 day') on conflict do nothing;
 
 -- Global notification
 insert into public.notifications (user_id, title, message, type, is_read, is_global) values
-  (null, 'System maintenance', 'Scheduled maintenance on Sunday 02:00 - 04:00 UTC. Online banking may be briefly unavailable.', 'system', false, true);
+  (null, 'System maintenance', 'Scheduled maintenance on Sunday 02:00 - 04:00 UTC. Online banking may be briefly unavailable.', 'system', false, true) on conflict do nothing;
 
 -- Re-enable the profile trigger for normal runtime behaviour.
 alter table public.profiles enable trigger on_profile_created;
