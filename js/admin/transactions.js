@@ -49,9 +49,10 @@
           '<td data-label="Date">' + UI.formatDateTime(t.created_at) + '</td>' +
           '<td data-label="Actions"><div class="row-actions">' +
             '<button class="row-action" data-view="' + t.id + '" title="View">' + ICONS.eye + '</button>' +
+            '<button class="row-action" data-edit="' + t.id + '" title="Edit">' + ICONS.edit + '</button>' +
             (t.status === 'completed'
               ? '<button class="row-action danger" data-reverse="' + t.id + '" title="Reverse">' + ICONS.arrowDown + '</button>'
-              : '<button class="row-action" data-status="' + t.id + '" title="Update status">' + ICONS.edit + '</button>') +
+              : '<button class="row-action" data-status="' + t.id + '" title="Update status">' + ICONS.check + '</button>') +
           '</div></td></tr>';
       }).join('') +
       '</tbody></table>';
@@ -76,6 +77,12 @@
         );
       });
     });
+    el.querySelectorAll('[data-edit]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const t = rows.find(function (x) { return x.id === b.getAttribute('data-edit'); });
+        editTx(t);
+      });
+    });
     el.querySelectorAll('[data-status]').forEach(function (b) {
       b.addEventListener('click', function () {
         const t = rows.find(function (x) { return x.id === b.getAttribute('data-status'); });
@@ -93,6 +100,77 @@
           } catch (e) { UI.toast(UI.apiErrorMessage(e), 'error'); }
         }, 'Reverse');
       });
+    });
+  }
+
+  function toLocalInput(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function editTx(t) {
+    const currencies = ['USD', 'EUR', 'GBP', 'NGN', 'CAD'];
+    const modal = UI.openModal(
+      '<div class="field"><label>Reference</label><input class="input" id="e-ref" value="' + UI.escapeHtml(t.reference) + '"></div>' +
+      '<div class="field"><label>Type</label><select class="select" id="e-type">' +
+        TYPES.map(function (x) { return '<option value="' + x + '"' + (x === t.type ? ' selected' : '') + '>' + UI.typeLabel(x) + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="field"><label>Direction</label><select class="select" id="e-direction">' +
+        '<option value="credit"' + (t.direction === 'credit' ? ' selected' : '') + '>Credit</option>' +
+        '<option value="debit"' + (t.direction === 'debit' ? ' selected' : '') + '>Debit</option>' +
+      '</select></div>' +
+      '<div class="field"><label>Amount</label><input type="number" class="input" id="e-amount" min="0.01" step="0.01" value="' + t.amount + '"></div>' +
+      '<div class="field"><label>Currency</label><select class="select" id="e-currency">' +
+        currencies.map(function (c) { return '<option value="' + c + '"' + (c === t.currency ? ' selected' : '') + '>' + c + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="field"><label>Fee</label><input type="number" class="input" id="e-fee" min="0" step="0.01" value="' + (t.fee || 0) + '"></div>' +
+      '<div class="field"><label>Status</label><select class="select" id="e-status">' +
+        STATUSES.map(function (s) { return '<option value="' + s + '"' + (s === t.status ? ' selected' : '') + '>' + UI.typeLabel(s) + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="field"><label>Transaction time</label><input type="datetime-local" class="input" id="e-time" value="' + toLocalInput(t.created_at) + '"></div>' +
+      '<div class="field"><label>Sender</label><input class="input" id="e-sender" value="' + UI.escapeHtml(t.sender || '') + '"></div>' +
+      '<div class="field"><label>Recipient</label><input class="input" id="e-recipient" value="' + UI.escapeHtml(t.recipient || '') + '"></div>' +
+      '<div class="field"><label>Purpose / description</label><input class="input" id="e-desc" value="' + UI.escapeHtml(t.description || '') + '"></div>' +
+      '<div class="form-error" id="e-error"></div>',
+      { title: 'Edit Transaction — ' + UI.escapeHtml(t.reference), footer: '<button class="btn btn-outline" data-cancel>Cancel</button><button class="btn btn-primary" data-save>Save changes</button>' }
+    );
+    modal.footer.querySelector('[data-cancel]').addEventListener('click', modal.close);
+    modal.footer.querySelector('[data-save]').addEventListener('click', async function () {
+      const err = document.getElementById('e-error');
+      err.textContent = '';
+      const reference = document.getElementById('e-ref').value.trim();
+      const amount = Number(document.getElementById('e-amount').value);
+      const fee = Number(document.getElementById('e-fee').value);
+      const time = document.getElementById('e-time').value;
+      if (!reference) { err.textContent = 'Reference is required.'; return; }
+      if (!amount || amount <= 0) { err.textContent = 'Enter a valid amount.'; return; }
+      if (isNaN(fee) || fee < 0) { err.textContent = 'Fee cannot be negative.'; return; }
+      if (!time) { err.textContent = 'Transaction time is required.'; return; }
+      const when = new Date(time);
+      if (isNaN(when.getTime())) { err.textContent = 'Enter a valid date and time.'; return; }
+      try {
+        await adminApi('admin_update_transaction', {
+          p_tx_id: t.id,
+          p_fields: {
+            reference: reference,
+            type: document.getElementById('e-type').value,
+            direction: document.getElementById('e-direction').value,
+            amount: amount,
+            currency: document.getElementById('e-currency').value,
+            fee: fee,
+            status: document.getElementById('e-status').value,
+            created_at: when.toISOString(),
+            sender: document.getElementById('e-sender').value.trim() || null,
+            recipient: document.getElementById('e-recipient').value.trim() || null,
+            description: document.getElementById('e-desc').value.trim() || null
+          }
+        });
+        UI.toast('Transaction updated.', 'success');
+        modal.close();
+        load();
+      } catch (e) { err.textContent = UI.apiErrorMessage(e); }
     });
   }
 
