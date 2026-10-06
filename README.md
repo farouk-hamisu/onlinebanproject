@@ -29,7 +29,7 @@ A full-featured online banking platform built with **vanilla HTML, CSS, and Java
 ├── css/                       Design system + all component styles
 ├── assets/logos/              Logo + favicon
 └── supabase/
-    ├── migrations/            001–019 (schema, RLS, functions, triggers, verification, admin grant, portal password sync, transaction editing)
+    ├── migrations/            001–020 (schema, RLS, functions, triggers, verification, admin grant, portal password sync, transaction editing, mock transaction history)
     └── seed.sql               Demo data (development only)
 ```
 
