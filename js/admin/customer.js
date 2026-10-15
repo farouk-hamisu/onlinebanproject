@@ -10,6 +10,13 @@
   let data = null;
   let activeTab = 'profile';
 
+  // Enabled platform currencies, for the display-currency selector
+  let CURRENCIES = [{ code: 'USD', name: 'US Dollar', symbol: '$' }];
+  try {
+    const { data: curRows, error } = await SB.from('currencies').select('code, name, symbol').eq('enabled', true).order('code');
+    if (!error && curRows && curRows.length) CURRENCIES = curRows;
+  } catch (e) { /* keep fallback */ }
+
   async function load() {
     try {
       data = await adminApi('admin_get_user', { p_user_id: id });
@@ -30,6 +37,7 @@
         '<div class="cm-actions">' +
           '<span class="badge ' + (p.status === 'active' ? 'badge-success' : p.status === 'suspended' ? 'badge-failed' : 'badge-neutral') + '">' + UI.escapeHtml(p.status) + '</span>' +
           UI.badge(p.kyc_status) +
+          '<button class="btn btn-outline btn-sm" data-act="currency" title="Change display currency">' + UI.escapeHtml(p.display_currency || 'USD') + '</button>' +
           (p.status === 'suspended'
             ? '<button class="btn btn-success btn-sm" data-act="activate">Activate</button>'
             : '<button class="btn btn-gold btn-sm" data-act="suspend">Suspend</button>') +
@@ -68,6 +76,36 @@
       });
     });
     document.querySelector('[data-act=account]').addEventListener('click', function () { openAccount(); });
+    document.querySelector('[data-act=currency]').addEventListener('click', function () { currencyModal(); });
+  }
+
+  function currencyModal() {
+    const cur = ((data.profile && data.profile.display_currency) || 'USD').toUpperCase();
+    const options = CURRENCIES.map(function (c) {
+      return '<option value="' + c.code + '"' + (c.code === cur ? ' selected' : '') + '>' + c.code + ' — ' + UI.escapeHtml(c.name || c.code) + '</option>';
+    }).join('');
+    const modal = UI.openModal(
+      '<div class="field"><label>Preferred currency</label><select class="select" id="dc-currency">' + options + '</select>' +
+      '<div class="hint">How this customer sees money across the platform (balances, transactions, transfers, loans, cards). Amounts convert using platform exchange rates; stored records keep their original currency.</div></div>' +
+      '<div class="form-error" id="dc-error"></div>',
+      { title: 'Display Currency', footer: '<button class="btn btn-outline" data-cancel>Cancel</button><button class="btn btn-primary" data-save>Save Currency</button>' }
+    );
+    modal.footer.querySelector('[data-cancel]').addEventListener('click', modal.close);
+    modal.footer.querySelector('[data-save]').addEventListener('click', async function () {
+      const err = document.getElementById('dc-error');
+      err.textContent = '';
+      const btn = this;
+      btn.disabled = true;
+      try {
+        await adminApi('admin_set_user_currency', { p_user_id: id, p_currency: document.getElementById('dc-currency').value });
+        UI.toast('Display currency updated.', 'success');
+        modal.close();
+        load();
+      } catch (e) {
+        btn.disabled = false;
+        err.textContent = UI.apiErrorMessage(e);
+      }
+    });
   }
 
   function openAccount() {
@@ -134,6 +172,7 @@
         '<div class="detail-item"><div class="k">Address</div><div class="v">' + UI.escapeHtml(p.address || '—') + '</div></div>' +
         '<div class="detail-item"><div class="k">City</div><div class="v">' + UI.escapeHtml(p.city || '—') + '</div></div>' +
         '<div class="detail-item"><div class="k">Country</div><div class="v">' + UI.escapeHtml(p.country || '—') + '</div></div>' +
+        '<div class="detail-item"><div class="k">Preferred currency</div><div class="v">' + UI.escapeHtml(p.display_currency || 'USD') + '</div></div>' +
         '<div class="detail-item"><div class="k">Status</div><div class="v">' + UI.badge(p.status) + '</div></div>' +
         '<div class="detail-item"><div class="k">KYC</div><div class="v">' + UI.badge(p.kyc_status) + '</div></div>' +
         '<div class="detail-item"><div class="k">Member since</div><div class="v">' + UI.formatDateTime(p.created_at) + '</div></div>' +

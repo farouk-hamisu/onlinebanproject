@@ -8,6 +8,20 @@
   let page = 1;
   let total = 0;
 
+  // Enabled platform currencies, for the display-currency selector
+  let CURRENCIES = [{ code: 'USD', name: 'US Dollar', symbol: '$' }];
+  try {
+    const { data, error } = await SB.from('currencies').select('code, name, symbol').eq('enabled', true).order('code');
+    if (!error && data && data.length) CURRENCIES = data;
+  } catch (e) { /* keep fallback */ }
+
+  function currencyOptions(selected) {
+    const cur = String(selected || 'USD').toUpperCase();
+    return CURRENCIES.map(function (c) {
+      return '<option value="' + c.code + '"' + (c.code === cur ? ' selected' : '') + '>' + c.code + ' — ' + UI.escapeHtml(c.name || c.code) + '</option>';
+    }).join('');
+  }
+
   async function load() {
     const el = document.getElementById('users-table');
     el.innerHTML = '<div class="loading-block"><div class="spinner"></div><span>Loading users...</span></div>';
@@ -131,6 +145,7 @@
         '<div class="field"><label>Phone</label><input type="text" class="input" id="u-phone" value="' + UI.escapeHtml(u.phone || '') + '"></div>' +
         '<div class="field"><label>Status</label><select class="select" id="u-status"><option value="active"' + (u.status === 'active' ? ' selected' : '') + '>Active</option><option value="pending"' + (u.status === 'pending' ? ' selected' : '') + '>Pending</option><option value="suspended"' + (u.status === 'suspended' ? ' selected' : '') + '>Suspended</option><option value="closed"' + (u.status === 'closed' ? ' selected' : '') + '>Closed</option></select></div>' +
         '<div class="field"><label>KYC status</label><select class="select" id="u-kyc"><option value="pending"' + (u.kyc_status === 'pending' ? ' selected' : '') + '>Pending</option><option value="verified"' + (u.kyc_status === 'verified' ? ' selected' : '') + '>Verified</option><option value="rejected"' + (u.kyc_status === 'rejected' ? ' selected' : '') + '>Rejected</option></select></div>' +
+        '<div class="field"><label>Display currency</label><select class="select" id="u-currency">' + currencyOptions(u.display_currency) + '</select><div class="hint">How this customer sees money across the platform. Amounts convert at display time; stored records keep their original currency.</div></div>' +
         '<div class="field"><label>Address</label><input type="text" class="input" id="u-address" value="' + UI.escapeHtml(u.address || '') + '"></div>' +
         '<div class="field"><label>City</label><input type="text" class="input" id="u-city" value="' + UI.escapeHtml(u.city || '') + '"></div>' +
         '<div class="field"><label>Country</label><input type="text" class="input" id="u-country" value="' + UI.escapeHtml(u.country || '') + '"></div>' +
@@ -154,7 +169,12 @@
           p_city: document.getElementById('u-city').value.trim() || null,
           p_country: document.getElementById('u-country').value.trim() || null
         });
-        UI.toast('Customer updated.', 'success');
+        const newCur = document.getElementById('u-currency').value;
+        const curChanged = newCur !== (u.display_currency || 'USD');
+        if (curChanged) {
+          await adminApi('admin_set_user_currency', { p_user_id: u.id, p_currency: newCur });
+        }
+        UI.toast(curChanged ? 'Customer updated — display currency is now ' + newCur + '.' : 'Customer updated.', 'success');
         modal.close();
         load();
       } catch (e) {

@@ -228,88 +228,53 @@
     if (message) el.querySelector('span').textContent = message;
   }
 
-  // ---------- Full-page loading screen ----------
+  // ---------- Full-page loading screen (spinning animation only, no text) ----------
   const PageLoader = {
     el: null,
     shown: false,
     _shownAt: 0,
     _hideTimer: null,
-    _msgTimer: null,
-    _msgIdx: 0,
-    messages: [
-      'Preparing your workspace',
-      'Securing your session',
-      'Loading your accounts',
-      'Fetching your balances',
-      'Syncing latest activity'
-    ],
 
     build() {
       if (this.el && this.el.parentNode) return this.el;
       // reuse a static #page-loader element if present in the page markup
       const existing = document.getElementById('page-loader');
-      if (existing) { this.el = existing; return existing; }
+      if (existing) {
+        // strip any legacy text/progress nodes from static markup
+        existing.querySelectorAll('.pl-status, .pl-track').forEach(function (n) { n.parentNode.removeChild(n); });
+        this.el = existing;
+        return existing;
+      }
       const div = document.createElement('div');
       div.className = 'page-loader';
       div.id = 'page-loader';
       div.setAttribute('role', 'status');
-      div.setAttribute('aria-live', 'polite');
+      div.setAttribute('aria-label', 'Loading');
       div.innerHTML =
         '<div class="pl-inner">' +
-          '<div class="pl-orbit">' +
+          '<div class="pl-orbit" aria-hidden="true">' +
             '<span class="pl-ring"></span>' +
             '<span class="pl-ring pl-ring--2"></span>' +
             '<span class="pl-ring pl-ring--3"></span>' +
             '<span class="pl-core"></span>' +
           '</div>' +
-          '<div class="pl-track"><span class="pl-progress"></span></div>' +
-          '<p class="pl-status" id="pl-status">' + this.messages[0] + '</p>' +
         '</div>';
       this.el = div;
       return div;
     },
 
-    show(message) {
+    show() {
       const el = this.build();
       if (!el.parentNode) document.body.appendChild(el);
       this.shown = true;
       this._shownAt = Date.now();
       clearTimeout(this._hideTimer);
-
-      const status = el.querySelector('#pl-status');
-      if (status) {
-        status.textContent = message || this.messages[0];
-        this._msgIdx = 0;
-      }
-      if (!message) this._startCycle();
       return el;
-    },
-
-    _startCycle() {
-      clearInterval(this._msgTimer);
-      this._msgTimer = setInterval(() => {
-        const el = this.el;
-        if (!el) return;
-        const status = el.querySelector('#pl-status');
-        if (!status) return;
-        this._msgIdx = (this._msgIdx + 1) % this.messages.length;
-        status.classList.add('is-swapping');
-        setTimeout(() => {
-          status.textContent = this.messages[this._msgIdx];
-          status.classList.remove('is-swapping');
-        }, 240);
-      }, 1800);
-    },
-
-    _stopCycle() {
-      clearInterval(this._msgTimer);
-      this._msgTimer = null;
     },
 
     hide() {
       if (!this.shown) return;
       this.shown = false;
-      this._stopCycle();
       const minWait = Math.max(0, 400 - (Date.now() - this._shownAt));
       this._hideTimer = setTimeout(() => {
         const el = this.el;
@@ -430,11 +395,80 @@
   });
 
   // ---------- Formatters ----------
-  const currencySymbols = APP_CONFIG.currencySymbols || { USD: '$' };
+  // Per-user display currency (set by admins via admin_set_user_currency).
+  // Conversion happens at render time with the platform's exchange_rates, so
+  // stored transaction/account amounts are never modified (audit-safe).
+  // Admin pages never initialize it, so the portal keeps showing native amounts.
+  const DisplayCurrency = {
+    code: 'USD',
+    symbols: Object.assign({}, APP_CONFIG.currencySymbols || { USD: '$' }),
+    rates: {},          // 'FROM->TO' -> number
+    supported: null,    // Set of enabled currency codes (null until loaded)
+    _load: null,
+
+    setCode(code) {
+      const c = String(code || '').toUpperCase();
+      if (c && (!this.supported || this.supported.has(c))) this.code = c;
+    },
+
+    load() {
+      if (this._load) return this._load;
+      this._load = (async () => {
+        try {
+          const [curRes, rateRes] = await Promise.all([
+            SB.from('currencies').select('code, symbol').eq('enabled', true),
+            SB.from('exchange_rates').select('base_currency, quote_currency, rate')
+          ]);
+          if (!curRes.error && curRes.data && curRes.data.length) {
+            this.supported = new Set();
+            curRes.data.forEach((c) => {
+              this.supported.add(c.code);
+              if (c.symbol) this.symbols[c.code] = c.symbol;
+            });
+            if (!this.supported.has(this.code)) this.code = 'USD';
+          }
+          if (!rateRes.error && rateRes.data) {
+            rateRes.data.forEach((r) => {
+              const rate = Number(r.rate);
+              if (rate > 0) this.rates[r.base_currency + '->' + r.quote_currency] = rate;
+            });
+          }
+        } catch (e) {
+          console.warn('Display currency: exchange rates unavailable', e);
+        }
+        return this;
+      })();
+      return this._load;
+    },
+
+    // Direct pair when available, otherwise triangulated via USD (platform base).
+    rate(from, to) {
+      if (from === to) return 1;
+      const direct = this.rates[from + '->' + to];
+      if (direct) return direct;
+      const a = this.rates[from + '->USD'];
+      const b = this.rates['USD->' + to];
+      return (a && b) ? a * b : null;
+    },
+
+    // Converted amount, or null when the pair is not convertible
+    // (e.g. crypto asset codes like BTC stay in their native unit).
+    convert(amount, from, to) {
+      const r = this.rate(from, to);
+      if (!r) return null;
+      return amount * r;
+    }
+  };
 
   function money(amount, currency) {
-    const n = Number(amount) || 0;
-    const sym = currencySymbols[currency] || (currency ? currency + ' ' : '') || '$';
+    let n = Number(amount) || 0;
+    const src = String(currency || 'USD').toUpperCase();
+    let out = src;
+    if (src !== DisplayCurrency.code) {
+      const converted = DisplayCurrency.convert(n, src, DisplayCurrency.code);
+      if (converted !== null) { n = converted; out = DisplayCurrency.code; }
+    }
+    const sym = DisplayCurrency.symbols[out] || (out ? out + ' ' : '') || '$';
     return sym + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
@@ -980,7 +1014,10 @@
     rpc, qs, copyText, formatNumber: money,
     cardDigits, renderCardFace,
     pinBoxesHTML, mountPinInput, verifyCustomerPin, promptPin,
-    verifyTransferCode, transferFlow
+    verifyTransferCode, transferFlow,
+    setDisplayCurrency: function (code) { DisplayCurrency.setCode(code); },
+    loadDisplayCurrency: function () { return DisplayCurrency.load(); },
+    displayCurrency: DisplayCurrency
   };
   global.PageLoader = PageLoader;
 })(window);

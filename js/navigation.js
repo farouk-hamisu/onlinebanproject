@@ -37,11 +37,9 @@ const AppShell = {
 
   bottomNavHTML() {
     const current = window.location.pathname.split('/').pop();
-    const blue = { 'cards.html': true };
     const items = this.bottomNavItems().map(function (it) {
       const active = current === it.href ? 'active' : '';
-      const cls = blue[it.href] ? 'is-blue' : '';
-      return '<a href="' + it.href + '" class="' + active + ' ' + cls + '">' + icon(it.icon) + '<span>' + it.label + '</span></a>';
+      return '<a href="' + it.href + '" class="' + active + '">' + icon(it.icon) + '<span>' + it.label + '</span></a>';
     }).join('');
     return '<nav class="bottom-nav" id="bottom-nav" aria-label="Quick navigation">' + items + '</nav>';
   },
@@ -60,6 +58,12 @@ const AppShell = {
       console.error('Failed to load profile', e);
       this.profile = { full_name: user.email || 'User', email: user.email || '' };
     }
+
+    // Per-user display currency: everything rendered through UI.money from
+    // here on shows amounts in this user's preferred currency (converted
+    // with platform exchange rates; stored values stay untouched).
+    UI.setDisplayCurrency(this.profile && this.profile.display_currency);
+    try { await UI.loadDisplayCurrency(); } catch (e) { console.warn('Exchange rates not loaded', e); }
 
     // Security PIN guard: existing accounts without a PIN must set one first.
     try {
