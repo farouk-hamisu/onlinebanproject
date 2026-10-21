@@ -334,7 +334,7 @@ begin
            btc_txid = lower(p_txid),
            submitted_at = now(),
            updated_at = now()
-     where id = p_purchase.id;
+     where id = v_purchase.id;
   exception when unique_violation then
     raise exception 'TXID_ALREADY_SUBMITTED';
   end;

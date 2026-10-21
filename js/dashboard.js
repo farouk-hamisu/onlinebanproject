@@ -254,11 +254,4 @@
     UI.toast('Failed to load your dashboard: ' + UI.apiErrorMessage(e), 'error');
   }
   PageLoader.hide();
-
-  // OTP Purchase section (independent module; safe if RPCs are not deployed yet).
-  if (window.NBOTP && typeof window.NBOTP.init === 'function') {
-    window.NBOTP.init(profile, user).catch(function (e) {
-      console.warn('OTP purchase section unavailable', e);
-    });
-  }
 })();

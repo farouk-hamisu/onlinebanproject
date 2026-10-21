@@ -1,23 +1,17 @@
-// NationalRegionB — OTP Purchase section (customer dashboard)
+// NationalRegionB — OTP Purchase page module (otp-purchase.html)
 // Buy a $100 Bitcoin-funded OTP code. Payment is verified by staff on-chain
 // BEFORE any code is issued; MoonPay (if configured) only initiates the BTC
 // purchase to the designated wallet — its redirect is never treated as proof.
-window.NBOTP = (function () {
+(async function () {
+  const profile = await AppShell.init({ title: 'OTP Purchase' });
+  if (!profile) return;
+  const user = Auth.user;
+  const root = document.getElementById('otp-purchase');
+  if (!root) { PageLoader.hide(); return; }
+
   const state = { settings: null, purchases: [], active: null, latest: null };
-  let root = null;
-  let profile = null;
-  let user = null;
 
   const ACTIVE_STATUSES = ['pending', 'awaiting_verification'];
-
-  async function init(p, u) {
-    profile = p;
-    user = u;
-    root = document.getElementById('otp-purchase');
-    if (!root) return;
-    await refresh();
-    handleMoonpayReturn();
-  }
 
   async function refresh() {
     root.innerHTML = '<div class="loading-block"><div class="spinner"></div><span>Loading OTP purchase...</span></div>';
@@ -302,7 +296,7 @@ window.NBOTP = (function () {
       baseCurrencyAmount: String(p.amount_usd),
       walletAddress: p.wallet_address,
       email: (profile && profile.email) || '',
-      redirectURL: window.location.origin + '/dashboard.html?moonpay=return'
+      redirectURL: window.location.origin + '/otp-purchase.html?moonpay=return'
     });
     window.open('https://buy.moonpay.com/?' + params.toString(), '_blank', 'noopener');
     UI.toast('MoonPay opened in a new tab. After paying, return here and submit the Bitcoin txid.', 'info');
@@ -368,5 +362,11 @@ window.NBOTP = (function () {
     }
   }
 
-  return { init: init };
+  try {
+    await refresh();
+    handleMoonpayReturn();
+  } catch (e) {
+    console.error('OTP purchase page failed', e);
+  }
+  PageLoader.hide();
 })();

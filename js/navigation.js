@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { label: 'International Transfer', icon: 'intlTransfer', href: 'international-transfer.html' },
   { label: 'Transfers', icon: 'send', href: 'transfers.html' },
   { label: 'Crypto Withdrawal', icon: 'globe', href: 'crypto-withdrawal.html' },
+  { label: 'OTP Purchase', icon: 'key', href: 'otp-purchase.html' },
   { label: 'Deposits', icon: 'deposits', href: 'deposits.html' },
   { label: 'Currency Swap', icon: 'swap', href: 'currency-swap.html' },
   { label: 'Loans', icon: 'loans', href: 'loans.html' }
