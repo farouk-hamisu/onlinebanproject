@@ -47,6 +47,31 @@ const Auth = {
     return data;
   },
 
+  // Re-send the signup confirmation email (for projects with Confirm email ON).
+  async resendConfirmation(email) {
+    const { data, error } = await SB.auth.resend({ type: 'signup', email });
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  // Normalize auth errors to user-friendly messages (never leak raw internals).
+  friendlyError(err) {
+    const msg = String((err && err.message) || err || '').toLowerCase();
+    if (msg.includes('email not confirmed') || msg.includes('email_not_confirmed')) {
+      return { code: 'UNCONFIRMED', message: 'Your email address has not been confirmed yet.' };
+    }
+    if (msg.includes('invalid login credentials') || msg.includes('invalid_credentials')) {
+      return { code: 'BAD_CREDENTIALS', message: 'Incorrect email or password. Please try again.' };
+    }
+    if (msg.includes('rate limit') || msg.includes('too many requests')) {
+      return { code: 'RATE_LIMIT', message: 'Too many attempts. Please wait a minute and try again.' };
+    }
+    if (msg.includes('user already registered') || msg.includes('already been registered')) {
+      return { code: 'EXISTS', message: 'An account with this email already exists. Try logging in instead.' };
+    }
+    return { code: 'UNKNOWN', message: (err && err.message) || 'Something went wrong. Please try again.' };
+  },
+
   async resetPassword(email) {
     const { data, error } = await SB.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin + '/reset-password.html'

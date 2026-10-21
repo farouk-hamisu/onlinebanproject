@@ -49,6 +49,11 @@
             <a href="forgot-password.html" class="text-sm">Forgot password?</a>
           </div>
           <div class="form-error" id="login-error"></div>
+          <div id="login-unconfirmed" style="display:none;margin-top:10px">
+            <p class="text-sm text-muted" style="margin:0 0 10px">Your account is active but the email address hasn't been confirmed yet. Open the confirmation link we emailed you, or resend it below.</p>
+            <div class="form-error" id="login-resend-error"></div>
+            <button type="button" class="btn btn-outline btn-block" id="login-resend-btn" style="border-radius:12px;font-weight:600">Resend confirmation email</button>
+          </div>
           <button type="submit" class="btn btn-primary btn-lg btn-block" id="login-btn" style="border-radius:14px;font-weight:700">Log In</button>
         </form>
         <div id="pin-step" style="display:none">
@@ -97,8 +102,30 @@
         } catch (err) {
           btn.disabled = false;
           btn.textContent = 'Log In';
-          errEl.textContent = UI.apiErrorMessage(err);
+          const fe = Auth.friendlyError(err);
+          errEl.textContent = fe.message;
+          document.getElementById('login-unconfirmed').style.display = fe.code === 'UNCONFIRMED' ? 'block' : 'none';
+          if (fe.code === 'UNCONFIRMED') loginPendingEmail = email;
         }
+      });
+
+      let loginPendingEmail = '';
+
+      document.getElementById('login-resend-btn').addEventListener('click', async function () {
+        const btnResend = this;
+        const errEl = document.getElementById('login-resend-error');
+        errEl.textContent = '';
+        if (!loginPendingEmail) return;
+        btnResend.disabled = true;
+        btnResend.textContent = 'Sending...';
+        try {
+          await Auth.resendConfirmation(loginPendingEmail);
+          UI.toast('Confirmation email sent. Check your inbox and spam folder.', 'success');
+        } catch (e) {
+          errEl.textContent = Auth.friendlyError(e).message;
+        }
+        btnResend.disabled = false;
+        btnResend.textContent = 'Resend confirmation email';
       });
 
       async function showPinStep() {

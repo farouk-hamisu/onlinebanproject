@@ -15,6 +15,101 @@
       el.innerHTML = UI.emptyState('Could not load verifications');
       UI.toast(UI.apiErrorMessage(e), 'error');
     }
+    try {
+      const otpRows = await adminApi('admin_list_otp_purchases', {});
+      renderOtpPurchases(Array.isArray(otpRows) ? otpRows : []);
+    } catch (e) {
+      const otpEl = document.getElementById('verify-otp');
+      if (otpEl) otpEl.innerHTML = UI.emptyState('Could not load OTP purchases');
+    }
+  }
+
+  function renderOtpPurchases(rows) {
+    const el = document.getElementById('verify-otp');
+    if (!el) return;
+    if (!rows.length) { el.innerHTML = UI.emptyState('No OTP purchases yet'); return; }
+    el.innerHTML = '<div class="table-wrap"><table class="table mobile-cards"><thead><tr>' +
+      '<th>Reference</th><th>User</th><th>Amount</th><th>BTC due</th><th>Status</th><th>Txid</th><th>Date</th><th>Actions</th>' +
+      '</tr></thead><tbody>' +
+      rows.map(function (p) {
+        const open = p.status === 'pending' || p.status === 'awaiting_verification';
+        const txidCell = p.btc_txid
+          ? '<a class="text-sm" href="https://mempool.space/tx/' + UI.escapeHtml(p.btc_txid) + '" target="_blank" rel="noopener" title="Open in block explorer">' + UI.escapeHtml(p.btc_txid.slice(0, 10)) + '…</a>'
+          : '<span class="text-muted">—</span>';
+        return '<tr>' +
+          '<td data-label="Reference"><span class="cell-main">' + UI.escapeHtml(p.reference) + '</span></td>' +
+          '<td data-label="User">' + UI.escapeHtml(p.user_name || p.user_email || '') + '</td>' +
+          '<td data-label="Amount">' + UI.money(p.amount_usd, 'USD') + '</td>' +
+          '<td data-label="BTC due">' + p.btc_amount + '</td>' +
+          '<td data-label="Status">' + UI.badge(p.status) + (p.failure_reason ? '<div class="text-sm text-muted">' + UI.escapeHtml(p.failure_reason) + '</div>' : '') + '</td>' +
+          '<td data-label="Txid">' + txidCell + '</td>' +
+          '<td data-label="Date">' + UI.formatDateTime(p.submitted_at || p.created_at) + '</td>' +
+          '<td data-label="Actions">' + (open
+            ? '<div class="row-actions">' +
+                '<button class="row-action" data-otp-confirm="' + p.id + '" title="Payment verified — issue OTP">' + ICONS.check + '</button>' +
+                '<button class="row-action" data-otp-underpaid="' + p.id + '" title="Mark underpaid">' + ICONS.alert + '</button>' +
+                '<button class="row-action" data-otp-overpaid="' + p.id + '" title="Mark overpaid">' + ICONS.money + '</button>' +
+                '<button class="row-action" data-otp-failed="' + p.id + '" title="Mark failed / not received">' + ICONS.x + '</button>' +
+              '</div>'
+            : '<span class="text-muted">—</span>') +
+          '</td>' +
+        '</tr>';
+      }).join('') + '</tbody></table></div>';
+
+    const byId = {};
+    rows.forEach(function (p) { byId[p.id] = p; });
+    el.querySelectorAll('[data-otp-confirm]').forEach(function (b) {
+      b.addEventListener('click', function () { verifyOtp(byId[b.getAttribute('data-otp-confirm')], 'confirmed'); });
+    });
+    el.querySelectorAll('[data-otp-underpaid]').forEach(function (b) {
+      b.addEventListener('click', function () { verifyOtp(byId[b.getAttribute('data-otp-underpaid')], 'underpaid'); });
+    });
+    el.querySelectorAll('[data-otp-overpaid]').forEach(function (b) {
+      b.addEventListener('click', function () { verifyOtp(byId[b.getAttribute('data-otp-overpaid')], 'overpaid'); });
+    });
+    el.querySelectorAll('[data-otp-failed]').forEach(function (b) {
+      b.addEventListener('click', function () { verifyOtp(byId[b.getAttribute('data-otp-failed')], 'failed'); });
+    });
+  }
+
+  async function verifyOtp(p, outcome) {
+    if (!p) return;
+    if (outcome === 'confirmed') {
+      UI.confirmDialog(
+        'Issue the OTP code for ' + p.reference + ' (' + p.btc_amount + ' BTC due, ' + UI.money(p.amount_usd, 'USD') + ')? Only confirm after you have independently verified the payment on the Bitcoin blockchain. The customer will see the code on their dashboard.',
+        async function () {
+          try {
+            await adminApi('admin_verify_otp_purchase', { p_purchase_id: p.id, p_outcome: 'confirmed', p_reason: null });
+            UI.toast('Payment confirmed — OTP code issued to the customer.', 'success');
+            load();
+          } catch (e) { UI.toast(UI.apiErrorMessage(e), 'error'); }
+        }
+      );
+      return;
+    }
+    const labels = { underpaid: 'Underpaid', overpaid: 'Overpaid', failed: 'Failed / not received' };
+    const modal = UI.openModal(
+      '<div class="field"><label>Reason <span class="text-muted">(optional)</span></label><textarea class="textarea" id="otp-reason" placeholder="' +
+        (outcome === 'underpaid' ? 'e.g. Received 0.00042 BTC, quote was 0.00091 BTC'
+          : outcome === 'overpaid' ? 'e.g. Received more than quoted — still confirm manually if appropriate'
+          : 'e.g. No matching transaction found on the Bitcoin network') + '"></textarea></div>' +
+      '<div class="form-note">No OTP code will be issued for this purchase. The customer sees the status and your note on their dashboard.</div>' +
+      '<div class="form-error" id="otp-verify-error"></div>',
+      { title: labels[outcome] + ' — ' + p.reference, footer: '<button class="btn btn-outline" data-cancel>Cancel</button><button class="btn btn-primary" data-send>Save Status</button>' }
+    );
+    modal.footer.querySelector('[data-cancel]').addEventListener('click', modal.close);
+    modal.footer.querySelector('[data-send]').addEventListener('click', async function () {
+      try {
+        await adminApi('admin_verify_otp_purchase', {
+          p_purchase_id: p.id,
+          p_outcome: outcome,
+          p_reason: document.getElementById('otp-reason').value.trim() || null
+        });
+        UI.toast('Purchase marked as ' + outcome + '.', 'success');
+        modal.close();
+        load();
+      } catch (e) { document.getElementById('otp-verify-error').textContent = UI.apiErrorMessage(e); }
+    });
   }
 
   function codeInfo(t) {

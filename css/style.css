@@ -807,3 +807,24 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .toast-container { left: 16px; right: 16px; max-width: none; }
   .notif-panel { width: 92vw; right: -12px; }
 }
+/* ---------- OTP Purchase section (customer dashboard) ---------- */
+.otp-intro { padding-bottom: 4px; }
+.otp-panel { border: 1px solid var(--border); border-radius: 14px; padding: 16px; background: var(--bg); }
+.otp-wallet {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px; word-break: break-all; background: #f4f6fa;
+  border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+}
+.otp-code-display {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 30px; font-weight: 700; letter-spacing: 6px; color: var(--primary);
+}
+.otp-terms { border-top: 1px solid var(--border); padding-top: 10px; }
+.otp-instructions summary { cursor: pointer; font-weight: 600; color: var(--primary); }
+.otp-instructions[open] summary { margin-bottom: 4px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+@media (max-width: 640px) {
+  .otp-code-display { font-size: 22px; letter-spacing: 4px; }
+  .otp-panel .btn { width: 100%; }
+  .otp-panel .flex { display: flex; }
+}
