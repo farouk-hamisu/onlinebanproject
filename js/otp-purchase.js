@@ -251,6 +251,15 @@
           '<ol style="margin:10px 0 14px;padding-left:18px">' + list + '</ol>' +
           '<p class="text-sm" style="margin:0 0 12px"><strong>Important:</strong> Review all transaction details and applicable fees before confirming your purchase. Buying Bitcoin does not automatically confirm payment for an OTP code; any required payment must be verified before the code can be issued.</p>' +
           '<a class="btn btn-primary" href="' + MOONPAY_URL + '" target="_blank" rel="noopener noreferrer" style="display:inline-block">Create MoonPay Account</a>' +
+          '<div class="otp-support" id="otp-support">' +
+            '<div class="font-bold">Customer support</div>' +
+            '<p class="text-sm text-muted" style="margin:6px 0 10px">Our support team is available 24/7 to help with your OTP code purchase, payment verification, and any other questions.</p>' +
+            '<div class="flex gap-2" style="flex-wrap:wrap">' +
+              '<button class="btn btn-primary btn-sm" id="otp-open-chat" type="button">Open Live Chat</button>' +
+              '<a class="btn btn-outline btn-sm" href="mailto:support@nationalregionb.com">Email Us</a>' +
+              '<a class="btn btn-outline btn-sm" href="tel:+18005550142">+1 (800) 555-0142</a>' +
+            '</div>' +
+          '</div>' +
           '<p class="text-sm text-muted" style="margin:12px 0 0">Quotes expire after ' + (s.quote_ttl_minutes || 60) + ' minutes if unpaid. An OTP code never guarantees approval of a transfer — standard KYC, eligibility and compliance checks still apply.</p>' +
         '</div>' +
       '</details>'
@@ -316,6 +325,17 @@
 
     root.querySelectorAll('[data-instr]').forEach(function (b) {
       b.addEventListener('click', showInstructions);
+    });
+
+    const openChat = document.getElementById('otp-open-chat');
+    if (openChat) openChat.addEventListener('click', function () {
+      try {
+        if (window.SMARTSUPP_LOADED && typeof window.smartsupp === 'function') {
+          window.smartsupp('chat:open');
+          return;
+        }
+      } catch (e) { /* fall through to email */ }
+      window.location.href = 'mailto:support@nationalregionb.com';
     });
 
     const copyWallet = document.getElementById('otp-copy-wallet');

@@ -862,6 +862,13 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
   border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
 }
 
+/* Customer support contact block inside instructions */
+.otp-support {
+  margin-top: 14px; padding: 14px;
+  border: 1px solid var(--border); border-radius: 14px; background: var(--surface);
+}
+.otp-support .btn { white-space: nowrap; }
+
 @media (max-width: 640px) {
   .otp-code-display { font-size: 22px; letter-spacing: 4px; }
   .otp-panel .btn { width: 100%; }
