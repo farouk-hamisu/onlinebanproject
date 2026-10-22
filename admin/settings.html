@@ -30,9 +30,16 @@
     </div>
 
     <div class="card mb-3" id="otp-settings-card">
-      <div class="card-header"><div><h3 class="card-title">OTP Verification Settings</h3><div class="card-subtitle">Require one-time verification codes for eligible international transfers and crypto withdrawals</div></div></div>
+      <div class="card-header"><div><h3 class="card-title">OTP Verification Settings</h3><div class="card-subtitle">Require one-time verification codes for withdrawals, eligible international transfers, and crypto withdrawals</div></div></div>
       <div id="otp-settings-body"><div class="loading-block"><div class="spinner"></div><span>Loading OTP settings...</span></div></div>
       <div class="form-error" id="otp-settings-error"></div>
+    </div>
+
+    <div class="card mb-3" id="withdrawal-settings-card">
+      <div class="card-header"><div><h3 class="card-title">Withdrawal methods</h3><div class="card-subtitle">Enable payout methods, choose how they are processed, and set the withdrawal fee and limits</div></div></div>
+      <div id="withdrawal-methods-body"><div class="loading-block"><div class="spinner"></div><span>Loading withdrawal methods...</span></div></div>
+      <div class="form-error" id="withdrawal-methods-error"></div>
+      <div class="mt-3"><button class="btn btn-primary" id="btn-save-withdrawal-methods">Save Withdrawal Settings</button></div>
     </div>
 
     <div class="card">

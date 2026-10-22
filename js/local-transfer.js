@@ -3,7 +3,34 @@
   await AppShell.init({ title: 'Local Transfer' });
   const user = Auth.user;
 
-  const state = { step: 1, accounts: [], balances: {}, beneficiaries: [], recipient: null };
+  const state = { step: 1, accounts: [], balances: {}, beneficiaries: [], recipient: null, otpRequired: false };
+
+  function otpErrorText(res) {
+    const left = res && res.attempts_left;
+    switch (res && res.reason) {
+      case 'invalid': return 'Incorrect verification code.' + (left != null ? ' ' + left + ' attempt' + (left === 1 ? '' : 's') + ' remaining.' : '');
+      case 'expired': return 'This verification code has expired. Please purchase a new OTP code.';
+      case 'used': return 'This verification code has already been used.';
+      case 'locked': return 'Too many incorrect attempts — your code has been invalidated. Please purchase a new OTP code.';
+      case 'failed': return 'This verification code is no longer active. Please contact support.';
+      case 'none': return 'No valid verification code found. Please purchase an OTP code first.';
+      default: return 'The verification code could not be verified.';
+    }
+  }
+
+  function toggleOtpField() {
+    document.getElementById('lt-otp-wrap').classList.toggle('hide', !state.otpRequired);
+  }
+
+  async function loadOtpSetting() {
+    try {
+      const cfg = await UI.rpc('customer_get_withdrawal_config', { p_user_id: user.id });
+      state.otpRequired = !!(cfg && cfg.otp_required);
+    } catch (e) {
+      state.otpRequired = false;
+    }
+    toggleOtpField();
+  }
 
   function showStep(n) {
     state.step = n;
@@ -147,10 +174,21 @@
   // --- Step 3 ---
   document.getElementById('step3-next').addEventListener('click', async function () {
     const btn = this;
+    const err = document.getElementById('step3-error');
+    err.textContent = '';
     const fromId = document.getElementById('t-from').value;
     const amount = Number(document.getElementById('t-amount').value);
     const acc = state.accounts.find(function (a) { return a.id === fromId; });
     const desc = document.getElementById('t-desc').value.trim();
+
+    let otpCode = null;
+    if (state.otpRequired) {
+      otpCode = (document.getElementById('lt-otp').value || '').trim().toUpperCase();
+      if (!/^[A-Z0-9]{8}$/.test(otpCode)) {
+        err.textContent = 'Enter the full 8-character verification code.';
+        return;
+      }
+    }
 
     // try to resolve internal recipient
     let internalRecipient = null;
@@ -174,8 +212,20 @@
         p_currency: acc.currency,
         p_description: desc || null,
         p_internal_recipient: internalRecipient || null,
-        p_pin: pin
+        p_pin: pin,
+        p_otp_code: otpCode
       });
+      if (transfer && transfer.result === 'INVALID') {
+        btn.disabled = false;
+        btn.textContent = 'Confirm & Send';
+        state.otpRequired = true;
+        toggleOtpField();
+        err.textContent = otpErrorText(transfer);
+        const otpInput = document.getElementById('lt-otp');
+        otpInput.value = '';
+        otpInput.focus();
+        return;
+      }
       document.getElementById('done-ref').textContent = transfer.reference;
       document.getElementById('done-amount').textContent = UI.money(amount, acc.currency);
       document.getElementById('done-name').textContent = state.recipient.name;
@@ -184,12 +234,24 @@
     } catch (e) {
       btn.disabled = false;
       btn.textContent = 'Confirm & Send';
-      if (e && e.message !== 'CANCELLED') UI.toast(UI.apiErrorMessage(e), 'error');
+      if (e && e.message !== 'CANCELLED') {
+        if ((e.message || '').split('\n')[0].trim() === 'OTP_REQUIRED') {
+          state.otpRequired = true;
+          toggleOtpField();
+          err.textContent = 'A one-time verification code is required for this transfer. Please purchase an OTP code and enter it above.';
+        } else {
+          err.textContent = UI.apiErrorMessage(e);
+        }
+      }
     }
   });
 
-  document.getElementById('step3-back').addEventListener('click', function () { showStep(2); });
+  document.getElementById('step3-back').addEventListener('click', function () {
+    document.getElementById('step3-error').textContent = '';
+    showStep(2);
+  });
 
   await load();
+  await loadOtpSetting();
   PageLoader.hide();
 })();

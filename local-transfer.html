@@ -30,6 +30,10 @@
 
     <div id="step-1" class="card">
       <h3 class="card-title mb-2">Who are you sending money to?</h3>
+      <div class="text-muted text-sm mb-3" style="padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px">
+        Sending to a wallet, PayPal, Cash App, or a bank account outside NationalRegionB?
+        <a href="withdraw.html">Use Withdraw Funds</a> instead.
+      </div>
       <div class="flex-between mb-3">
         <select class="select" id="beneficiary-select" style="max-width:420px"><option value="">Select a saved beneficiary...</option></select>
         <button class="btn btn-outline btn-sm" id="btn-new-benef">+ New Beneficiary</button>
@@ -77,7 +81,13 @@
           <div class="detail-item"><div class="k">Description</div><div class="v" id="rv-desc">—</div></div>
         </div>
       </div>
-      <div class="flex-between"><button class="btn btn-outline" id="step3-back">Back</button><button class="btn btn-primary" id="step3-next">Confirm & Send</button></div>
+      <div class="field hide" id="lt-otp-wrap" style="margin-top:4px">
+        <label>One-time verification code</label>
+        <input type="text" class="input" id="lt-otp" maxlength="8" autocomplete="off" spellcheck="false" autocapitalize="characters" placeholder="••••-XXXX" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-family:ui-monospace,monospace;font-size:18px">
+        <div class="text-muted text-sm" style="margin-top:6px">This transfer requires a one-time verification code. <a href="otp-purchase.html">Buy an OTP code</a></div>
+      </div>
+      <div class="form-error" id="step3-error"></div>
+      <div class="flex-between mt-3"><button class="btn btn-outline" id="step3-back">Back</button><button class="btn btn-primary" id="step3-next">Confirm & Send</button></div>
     </div>
 
     <div id="step-4" class="card hide text-center">

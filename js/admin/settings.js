@@ -59,18 +59,22 @@
   }
 
   const STRING_KEYS = ['bank_name', 'currency', 'otp_btc_wallet_address'];
-  const NUMERIC_KEYS = ['local_transfer_fee', 'intl_transfer_fee', 'swap_fee_percent', 'otp_purchase_price_usd', 'otp_btc_usd_rate'];
+  const NUMERIC_KEYS = ['local_transfer_fee', 'intl_transfer_fee', 'swap_fee_percent', 'otp_purchase_price_usd', 'otp_btc_usd_rate',
+                        'withdrawal_fee', 'withdrawal_min_amount', 'withdrawal_max_amount'];
 
   function renderSettings(settings) {
     const el = document.getElementById('settings-form');
     const keys = ['bank_name', 'currency', 'local_transfer_fee', 'intl_transfer_fee', 'swap_fee_percent', 'maintenance_mode',
-                  'otp_purchase_price_usd', 'otp_btc_usd_rate', 'otp_btc_wallet_address'];
+                  'otp_purchase_price_usd', 'otp_btc_usd_rate', 'otp_btc_wallet_address',
+                  'withdrawal_fee', 'withdrawal_min_amount', 'withdrawal_max_amount'];
     const labels = {
       bank_name: 'Bank name', currency: 'Default currency',
       local_transfer_fee: 'Local transfer fee (flat)', intl_transfer_fee: 'International transfer fee (flat)',
       swap_fee_percent: 'Currency swap fee %', maintenance_mode: 'Maintenance mode',
       otp_purchase_price_usd: 'OTP purchase price (USD)', otp_btc_usd_rate: 'BTC/USD reference rate',
-      otp_btc_wallet_address: 'OTP Bitcoin wallet address'
+      otp_btc_wallet_address: 'OTP Bitcoin wallet address',
+      withdrawal_fee: 'Withdrawal fee (flat)', withdrawal_min_amount: 'Withdrawal minimum amount',
+      withdrawal_max_amount: 'Withdrawal maximum amount'
     };
     el.innerHTML = keys.map(function (k) {
       const val = settings[k];
@@ -80,7 +84,13 @@
       }
       let extra = k === 'otp_btc_usd_rate' ? '<div class="form-note">Used to quote OTP purchases. Refresh it from OTP Verification Settings using the live market rate.</div>' : '';
       if (k === 'otp_btc_wallet_address') {
-        extra += '<div class="form-note">Bitcoin address where customers send the OTP fee. Customers buy Bitcoin elsewhere (e.g. MoonPay) and pay this address directly — no payment API keys are required.</div>';
+        extra += '<div class="form-note">Bitcoin address where customers pay the OTP fee. Customers buy Bitcoin elsewhere (e.g. MoonPay) and pay this address directly — no payment API keys are required.</div>';
+      }
+      if (k === 'withdrawal_fee') {
+        extra += '<div class="form-note">Flat fee charged on top of every withdrawal amount. Set 0 for free withdrawals.</div>';
+      }
+      if (k === 'withdrawal_min_amount' || k === 'withdrawal_max_amount') {
+        extra += '<div class="form-note">Set 0 to disable this ' + (k === 'withdrawal_min_amount' ? 'minimum' : 'maximum') + ' limit.</div>';
       }
       return '<div class="field"><label>' + labels[k] + '</label><input type="text" class="input" data-key="' + k + '" value="' + UI.escapeHtml(typeof v === 'string' ? v.replace(/"/g, '') : v) + '">' + extra + '</div>';
     }).join('');
@@ -102,14 +112,14 @@
     el.innerHTML =
       '<div class="flex-between" style="flex-wrap:wrap;gap:12px">' +
         '<div style="min-width:220px">' +
-          '<div class="text-sm text-muted">Require OTP for Transfers</div>' +
+          '<div class="text-sm text-muted">Require OTP for Withdrawals &amp; Transfers</div>' +
           '<div style="margin:6px 0"><span class="badge ' + (enabled ? 'badge-success' : 'badge-neutral') + '" id="otp-toggle-indicator">' +
             (notConfigured ? 'Not configured — OTP required (default)' : (enabled ? 'Enabled — OTP required' : 'Disabled — OTP not required')) +
           '</span></div>' +
           '<div class="text-sm text-muted" style="margin:0">' +
             (enabled
-              ? 'International transfers and crypto withdrawals are held for one-time verification until a code is entered.'
-              : 'Eligible transfers proceed without the extra OTP step after PIN, balance, fraud, and compliance checks.') +
+              ? 'All withdrawals, eligible international transfers, and crypto withdrawals are held for one-time verification until a code is entered.'
+              : 'Eligible transfers and withdrawals proceed without the extra OTP step after PIN, balance, fraud, and compliance checks.') +
           '</div>' +
         '</div>' +
         '<div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">' +
@@ -134,8 +144,8 @@
       }
       UI.confirmDialog(
         next
-          ? 'Require OTP verification for eligible transfers? New international transfers and crypto withdrawals will be held until a one-time code is entered.'
-          : 'Disable OTP verification for eligible transfers? New transfers will be released after PIN, balance, fraud, and compliance checks without the extra OTP step. This change is recorded in the audit log.',
+          ? 'Require OTP verification for withdrawals and eligible transfers? New withdrawals, international transfers, and crypto withdrawals will be held until a one-time code is entered.'
+          : 'Disable OTP verification for withdrawals and eligible transfers? New transfers and withdrawals will be released after PIN, balance, fraud, and compliance checks without the extra OTP step. This change is recorded in the audit log.',
         async function () {
           errEl.textContent = '';
           try {
@@ -172,16 +182,111 @@
     });
   }
 
+  const WD_METHODS = [
+    { id: 'usdt', name: 'USDT (Tether)' },
+    { id: 'btc', name: 'Bitcoin (BTC)' },
+    { id: 'paypal', name: 'PayPal' },
+    { id: 'cashapp', name: 'Cash App' },
+    { id: 'wire', name: 'Wire Transfer' },
+    { id: 'wise', name: 'Wise' },
+    { id: 'payoneer', name: 'Payoneer' },
+    { id: 'skrill', name: 'Skrill' },
+    { id: 'stripe', name: 'Stripe' }
+  ];
+
+  function parseMethodsSetting(raw) {
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) return { obj: raw, present: true };
+    if (typeof raw === 'string' && raw.trim()) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return { obj: parsed, present: true };
+      } catch (e) { /* fall through */ }
+    }
+    const defaults = {};
+    const defaultNetworks = { usdt: ['TRC20', 'ERC20', 'BEP20'], btc: ['Bitcoin'] };
+    WD_METHODS.forEach(function (m) {
+      defaults[m.id] = { enabled: true, networks: defaultNetworks[m.id] || [], status: 'manual' };
+    });
+    return { obj: defaults, present: false };
+  }
+
+  function renderWithdrawalMethods(settings) {
+    const el = document.getElementById('withdrawal-methods-body');
+    const parsed = parseMethodsSetting(settings['withdrawal_methods']);
+    const cfg = parsed.obj;
+
+    const rows = WD_METHODS.map(function (m, i) {
+      const c = cfg[m.id] && typeof cfg[m.id] === 'object' ? cfg[m.id] : {};
+      const enabled = c.enabled === true || c.enabled === 'true';
+      const status = c.status === 'auto' || c.status === 'automatic' ? 'auto' : 'manual';
+      const nets = Array.isArray(c.networks) ? c.networks : [];
+      const netChips = nets.length
+        ? '<div class="text-muted text-sm">' + nets.map(function (n) {
+            return '<span class="badge badge-neutral" style="margin-right:4px;font-size:10px">' + UI.escapeHtml(n) + '</span>';
+          }).join('') + '</div>'
+        : '';
+      return '<div class="wd-method-row"' + (i === 0 ? ' style="border-top:none;padding-top:0"' : '') + ' data-m="' + m.id + '">' +
+        '<div><strong style="font-size:14px">' + UI.escapeHtml(m.name) + '</strong>' + netChips + '</div>' +
+        '<div><select class="select" data-status style="min-width:150px">' +
+          '<option value="manual"' + (status === 'manual' ? ' selected' : '') + '>Manual review</option>' +
+          '<option value="auto"' + (status === 'auto' ? ' selected' : '') + '>Automatic payout</option>' +
+        '</select></div>' +
+        '<label class="switch" title="Enable or disable"><input type="checkbox" data-enabled' + (enabled ? ' checked' : '') + '><span class="track"></span></label>' +
+      '</div>';
+    }).join('');
+
+    el.innerHTML =
+      (parsed.present ? '' :
+        '<div class="form-note" style="margin-bottom:10px;background:var(--warning-soft);border:1px solid var(--warning);color:var(--warning);padding:8px 12px;border-radius:8px">' +
+        'Withdrawal methods are not configured yet — built-in defaults are shown. Saving here writes the setting.</div>') +
+      '<div class="wd-method-row" style="border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:2px">' +
+        '<div class="text-sm text-muted" style="text-transform:uppercase;letter-spacing:.04em;font-weight:700">Method</div>' +
+        '<div class="text-sm text-muted" style="text-transform:uppercase;letter-spacing:.04em;font-weight:700">Processing</div>' +
+        '<div class="text-sm text-muted" style="text-transform:uppercase;letter-spacing:.04em;font-weight:700">Enabled</div>' +
+      '</div>' + rows;
+  }
+
+  document.getElementById('btn-save-withdrawal-methods').addEventListener('click', function () {
+    const err = document.getElementById('withdrawal-methods-error');
+    err.textContent = '';
+    const rows = document.querySelectorAll('#withdrawal-methods-body [data-m]');
+    if (!rows.length) { err.textContent = 'Nothing to save.'; return; }
+    const settings = window.__adminSettingsCache || {};
+    const parsed = parseMethodsSetting(settings['withdrawal_methods']);
+    const obj = parsed.obj;
+    rows.forEach(function (row) {
+      const id = row.getAttribute('data-m');
+      const prev = obj[id] && typeof obj[id] === 'object' ? obj[id] : {};
+      obj[id] = {
+        enabled: row.querySelector('[data-enabled]').checked,
+        status: row.querySelector('[data-status]').value,
+        networks: Array.isArray(prev.networks) ? prev.networks : []
+      };
+    });
+    UI.confirmDialog('Save withdrawal method settings? Customers will see these methods on the Withdraw Funds page immediately.', async function () {
+      try {
+        await adminApi('admin_update_setting', { p_key: 'withdrawal_methods', p_value: obj });
+        UI.toast('Withdrawal settings saved.', 'success');
+        loadSettings();
+      } catch (e) {
+        err.textContent = UI.apiErrorMessage(e);
+      }
+    });
+  });
+
   async function loadSettings() {
     const el = document.getElementById('settings-form');
     el.innerHTML = '<div class="loading-block"><div class="spinner"></div><span>Loading settings...</span></div>';
     try {
       const settings = await adminApi('admin_get_settings');
+      window.__adminSettingsCache = settings || {};
       renderSettings(settings || {});
       renderOtpToggle(settings || {});
+      renderWithdrawalMethods(settings || {});
     } catch (e) {
       el.innerHTML = UI.emptyState('Could not load settings');
       document.getElementById('otp-settings-body').innerHTML = UI.emptyState('Could not load OTP settings');
+      document.getElementById('withdrawal-methods-body').innerHTML = UI.emptyState('Could not load withdrawal methods');
       UI.toast(UI.apiErrorMessage(e), 'error');
     }
   }

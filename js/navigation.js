@@ -4,8 +4,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard', icon: 'dashboard', href: 'dashboard.html' },
   { label: 'Transactions', icon: 'transactions', href: 'transactions.html' },
   { label: 'Cards', icon: 'cards', href: 'cards.html' },
-  { label: 'Local Transfer', icon: 'localTransfer', href: 'local-transfer.html' },
-  { label: 'International Transfer', icon: 'intlTransfer', href: 'international-transfer.html' },
+  { label: 'Withdraw Funds', icon: 'arrowUp', href: 'withdraw.html' },
   { label: 'Transfers', icon: 'send', href: 'transfers.html' },
   { label: 'Crypto Withdrawal', icon: 'globe', href: 'crypto-withdrawal.html' },
   { label: 'OTP Purchase', icon: 'key', href: 'otp-purchase.html' },
@@ -31,7 +30,7 @@ const AppShell = {
       { label: 'Dashboard', icon: 'dashboard', href: 'dashboard.html' },
       { label: 'Transactions', icon: 'transactions', href: 'transactions.html' },
       { label: 'Cards', icon: 'cards', href: 'cards.html' },
-      { label: 'Transfer', icon: 'localTransfer', href: 'local-transfer.html' },
+      { label: 'Withdraw', icon: 'arrowUp', href: 'withdraw.html' },
       { label: 'Loans', icon: 'loans', href: 'loans.html' }
     ];
   },
