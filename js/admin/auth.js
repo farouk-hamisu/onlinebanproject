@@ -123,8 +123,31 @@ function renderAdminShell(title) {
     '<nav class="bottom-nav" id="admin-bottom-nav" aria-label="Quick navigation">' + bottomItems + '</nav>';
 
   const pageRoot = document.getElementById('page-root');
+
+  // Keep the Smartsupp live-chat widget alive across the body wipe (same
+  // logic as js/navigation.js — the loader's guard blocks a plain re-run).
+  const ssKeep = [];
+  const ssSel = 'script[src*="smartsuppchat"], #smartsupp-widget-container, #widgetButtonFrame, #widgetMessengerFrame';
+  Array.prototype.forEach.call(document.body.children, function (el) {
+    if (el.matches && (el.matches(ssSel) || el.querySelector(ssSel))) ssKeep.push(el);
+  });
+  const ssFrag = document.createDocumentFragment();
+  ssKeep.forEach(function (el) { ssFrag.appendChild(el); });
+
   document.body.innerHTML = '';
   document.body.appendChild(shell);
+  while (ssFrag.firstChild) document.body.appendChild(ssFrag.firstChild);
+
+  window.setTimeout(function () {
+    if (document.getElementById('widgetButtonFrame')) return;
+    try {
+      if (window.SMARTSUPP_LOADED) window.SMARTSUPP_LOADED = false;
+      const s = document.createElement('script');
+      s.src = 'https://www.smartsuppchat.com/loader.js?';
+      s.async = true;
+      document.body.appendChild(s);
+    } catch (e) { /* chat is optional */ }
+  }, 6000);
   PageLoader.show();
 
   if (pageRoot) document.getElementById('admin-content').appendChild(pageRoot);

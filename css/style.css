@@ -667,6 +667,14 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .bottom-nav a { font-size: 9px; }
 }
 
+/* Smartsupp live chat must paint above app chrome (bottom-nav z-index 1300,
+   header 1200, sidebar 9500 …) on every page of the platform. */
+#smartsupp-widget-container,
+#widgetButtonFrame,
+#widgetMessengerFrame {
+  z-index: 2147483000 !important;
+}
+
 /* ============================================================
    ADMIN SHELL (lighter sidebar)
    ============================================================ */

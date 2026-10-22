@@ -83,8 +83,34 @@ const AppShell = {
     shell.className = 'app-shell';
     shell.innerHTML = this.sidebarHTML() + '<div class="app-main">' + this.headerHTML() + '<div class="app-content" id="app-content"></div></div><div class="sidebar-backdrop" id="sidebar-backdrop"></div>' + this.bottomNavHTML();
 
+    // Smartsupp's live-chat widget lives in <body>. Wiping the body would
+    // destroy its DOM, and the loader's SMARTSUPP_LOADED guard prevents a
+    // plain re-run — so detach its nodes first and re-attach after the shell.
+    const ssKeep = [];
+    const ssSel = 'script[src*="smartsuppchat"], #smartsupp-widget-container, #widgetButtonFrame, #widgetMessengerFrame';
+    Array.prototype.forEach.call(document.body.children, function (el) {
+      if (el.matches && (el.matches(ssSel) || el.querySelector(ssSel))) ssKeep.push(el);
+    });
+    const ssFrag = document.createDocumentFragment();
+    ssKeep.forEach(function (el) { ssFrag.appendChild(el); });
+
     document.body.innerHTML = '';
     document.body.appendChild(shell);
+    while (ssFrag.firstChild) document.body.appendChild(ssFrag.firstChild);
+
+    // If the widget still hasn't materialised (loader was mid-flight during
+    // the wipe), restart it — lifting the loader guard when it ran but its
+    // nodes were destroyed.
+    window.setTimeout(function () {
+      if (document.getElementById('widgetButtonFrame')) return;
+      try {
+        if (window.SMARTSUPP_LOADED) window.SMARTSUPP_LOADED = false;
+        const s = document.createElement('script');
+        s.src = 'https://www.smartsuppchat.com/loader.js?';
+        s.async = true;
+        document.body.appendChild(s);
+      } catch (e) { /* chat is optional — email/phone remain in the UI */ }
+    }, 6000);
     PageLoader.show();
 
     // move page content into app-content
