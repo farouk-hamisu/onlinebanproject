@@ -849,8 +849,11 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
   border: 1px solid var(--border); border-radius: 14px;
   padding: 14px; background: var(--surface);
 }
-.otp-cta .btn { width: 100%; }
+.otp-cta .btn { width: 100%; white-space: nowrap; min-height: 50px; overflow: hidden; text-overflow: ellipsis; }
 @media (min-width: 641px) { .otp-cta .btn-lg { width: auto; } }
+@media (max-width: 360px) {
+  .otp-cta .btn-lg { padding-left: 16px; padding-right: 16px; font-size: 14.5px; }
+}
 
 /* Fee / wallet summary inside instructions */
 .otp-fees-box {

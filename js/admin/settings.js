@@ -80,6 +80,9 @@
         return '<div class="field"><label>' + labels[k] + '</label><select class="select" data-key="' + k + '"><option value="true"' + (String(v) === 'true' ? ' selected' : '') + '>On</option><option value="false"' + (String(v) === 'false' ? ' selected' : '') + '>Off</option></select></div>';
       }
       let extra = k === 'otp_btc_usd_rate' ? '<div class="form-note">Used to quote OTP purchases. Refresh it from OTP Verification Settings using the live market rate.</div>' : '';
+      if (k === 'moonpay_public_key') {
+        extra = '<div class="form-note">Publishable (pk_...) key from your MoonPay dashboard (dashboard.moonpay.com \u2192 Customers \u2192 API keys). Required to activate the “Pay with MoonPay” checkout buttons. Safe to expose in the browser \u2014 never enter your secret (sk_) key here.</div>';
+      }
       if (k === 'moonpay_secret_key') {
         extra = '<div class="form-note">Server-side signing key (sk_...) from your MoonPay dashboard. Required by MoonPay to pre-fill the destination wallet address in checkout URLs. Stored securely and never sent to customers. Leave empty for an unsigned checkout (customers paste the wallet address themselves).</div>';
       }
@@ -221,14 +224,37 @@
     err.textContent = '';
     try {
       const inputs = document.querySelectorAll('#settings-form [data-key]');
+      const values = {};
       for (const el of inputs) {
-        const key = el.getAttribute('data-key');
-        let val = el.value.trim();
+        values[el.getAttribute('data-key')] = el.value.trim();
+      }
+      const pk = values.moonpay_public_key || '';
+      const sk = values.moonpay_secret_key || '';
+      if (pk && !/^pk_[A-Za-z0-9]+$/.test(pk)) {
+        err.textContent = 'MoonPay publishable API key must start with "pk_" — copy it from dashboard.moonpay.com (Customers → API keys). Settings were not saved.';
+        return;
+      }
+      if (sk && !/^sk_[A-Za-z0-9]+$/.test(sk)) {
+        err.textContent = 'MoonPay secret API key must start with "sk_" — copy it from dashboard.moonpay.com (Customers → API keys). Settings were not saved.';
+        return;
+      }
+      const failed = [];
+      for (const key in values) {
+        let val = values[key];
         if (STRING_KEYS.indexOf(key) !== -1) val = '"' + val.replace(/"/g, '') + '"';
         if (NUMERIC_KEYS.indexOf(key) !== -1) val = String(Number(val) || 0);
-        await adminApi('admin_update_setting', { p_key: key, p_value: JSON.parse(val) });
+        try {
+          await adminApi('admin_update_setting', { p_key: key, p_value: JSON.parse(val) });
+        } catch (e) {
+          failed.push(key);
+        }
       }
-      UI.toast('Settings saved.', 'success');
+      if (failed.length) {
+        err.textContent = 'Could not save: ' + failed.join(', ') + '. All other settings were saved — please try again.';
+        UI.toast('Some settings could not be saved.', 'error');
+      } else {
+        UI.toast('Settings saved.', 'success');
+      }
       loadSettings();
     } catch (e) { err.textContent = UI.apiErrorMessage(e); }
   });

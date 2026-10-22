@@ -151,11 +151,11 @@
         (expired ? '<p class="text-sm" style="color:var(--warning)">This quote is past its window. Cancel it and start a fresh purchase if the rate no longer suits you.</p>' : '') +
 
         '<div class="otp-cta mb-3">' +
-          '<div class="text-sm font-bold mb-1">' + (mp ? 'Continue to MoonPay (recommended)' : 'Pay with MoonPay or Bitcoin') + '</div>' +
-          '<button class="btn btn-primary btn-lg" id="otp-moonpay-btn" style="border-radius:12px;font-weight:700">Continue to MoonPay — ' + fee + '</button>' +
+          '<div class="text-sm font-bold mb-1">' + (mp ? 'Pay with MoonPay (recommended)' : 'Pay with MoonPay or Bitcoin') + '</div>' +
+          '<button class="btn btn-primary btn-lg" id="otp-moonpay-btn" style="border-radius:12px;font-weight:700">Pay with MoonPay</button>' +
           (mp
             ? '<p class="text-sm text-muted" style="margin:8px 0 0">You will be redirected to <strong>MoonPay\u2019s official checkout</strong> to pay the ' + fee + ' OTP fee with your card or bank. MoonPay buys the Bitcoin and delivers it to the designated wallet. Come back here afterwards and submit the transaction ID below — the redirect itself never counts as proof of payment.</p>'
-            : '<p class="text-sm text-muted" style="margin:8px 0 0">MoonPay online checkout is not configured on this platform yet — clicking the button shows what to do instead. You can also pay directly in Bitcoin now: send exactly <strong>' + UI.escapeHtml(p.btc_amount) + ' BTC</strong> to the wallet address below.</p>') +
+            : '<p class="text-sm text-muted" style="margin:8px 0 0">MoonPay online checkout is not configured on this platform yet — the administrator must add the MoonPay publishable key in <strong>Admin \u2192 Settings</strong> first. You can pay directly in Bitcoin right now: send exactly <strong>' + UI.escapeHtml(p.btc_amount) + ' BTC</strong> to the wallet address below.</p>') +
         '</div>' +
 
         '<div class="detail-grid mb-2">' +
@@ -183,9 +183,9 @@
         '<p class="text-sm text-muted mt-2">Submitting the txid does not confirm payment. Our team verifies the transaction on the Bitcoin network before your OTP code is issued.</p>' +
 
         '<div class="otp-cta mt-3">' +
-          '<button class="btn btn-outline btn-lg" id="otp-buy-btc-btn" style="border-radius:12px;font-weight:700">Buy Bitcoin with MoonPay</button>' +
+          '<button class="btn btn-outline btn-lg" id="otp-buy-btc-btn" style="border-radius:12px;font-weight:700" aria-label="Buy Bitcoin with MoonPay">Buy Bitcoin</button>' +
           '<p class="text-sm text-muted" style="margin:8px 0 0">Opens MoonPay\u2019s official Bitcoin purchase page with the quoted amount (' + UI.escapeHtml(p.btc_amount) + ' BTC) and the designated wallet pre-filled where supported. You will be redirected to MoonPay to complete the payment' + (mp ? ', then return here to submit the transaction ID.' : '.') + '</p>' +
-          (mp ? '' : '<p class="text-sm text-muted" style="margin:6px 0 0"><em>MoonPay checkout is currently unavailable on this platform — click the button for details, or pay by Bitcoin directly using the address above.</em></p>') +
+          (mp ? '' : '<p class="text-sm text-muted" style="margin:6px 0 0"><em>MoonPay checkout is not configured yet — the publishable key must be added in Admin \u2192 Settings. Click the button for details, or pay by Bitcoin directly using the address above.</em></p>') +
         '</div>' +
         '<div class="form-error" id="otp-moonpay-error"></div>' +
 
@@ -285,7 +285,7 @@
     const steps = [];
     steps.push('<strong>Confirm your purchase.</strong> Click “Buy OTP Code — ' + fee + '” and confirm. We create a payment quote showing the exact Bitcoin amount (' + UI.escapeHtml(btc) + ' BTC), the OTP fee (' + fee + ') and the designated wallet address.');
     if (mp) {
-      steps.push('<strong>Continue to MoonPay (recommended).</strong> You are redirected to MoonPay\u2019s secure checkout to pay the ' + fee + ' with your card or bank. MoonPay buys the Bitcoin and delivers it to our designated wallet — MoonPay shows its own service fee at checkout, on top of the ' + fee + ' OTP fee.');
+      steps.push('<strong>Pay with MoonPay (recommended).</strong> You are redirected to MoonPay\u2019s secure checkout to pay the ' + fee + ' with your card or bank. MoonPay buys the Bitcoin and delivers it to our designated wallet — MoonPay shows its own service fee at checkout, on top of the ' + fee + ' OTP fee.');
       steps.push('<strong>Prefer Bitcoin directly?</strong> After confirming, send exactly ' + UI.escapeHtml(btc) + ' BTC to the designated wallet address shown on this page (use the Copy button). Bitcoin network miner fees may be added by your wallet. BTC only — other coins sent here may be unrecoverable.');
     } else {
       steps.push('<strong>Pay in Bitcoin.</strong> Send exactly ' + UI.escapeHtml(btc) + ' BTC to the designated wallet address shown on this page (use the Copy button). Bitcoin network miner fees may be added by your wallet. BTC only — other coins sent here may be unrecoverable.');
@@ -385,7 +385,7 @@
   async function checkoutUrl(p) {
     const s = state.settings || {};
     if (!s.moonpay_public_key) {
-      const err = new Error('MoonPay checkout is not configured on this platform.');
+      const err = new Error('MoonPay publishable key is missing from settings.');
       err.code = 'MOONPAY_NOT_CONFIGURED';
       throw err;
     }
@@ -398,7 +398,7 @@
         return validateCheckoutUrl(res.url);
       }
       if (res && res.moonpay_enabled === false) {
-        const err = new Error('MoonPay checkout is not configured on this platform.');
+        const err = new Error(res.reason || 'MoonPay is not configured.');
         err.code = 'MOONPAY_NOT_CONFIGURED';
         throw err;
       }
@@ -416,12 +416,22 @@
 
   function moonpayErrorText(e) {
     if (e && e.code === 'MOONPAY_NOT_CONFIGURED') {
-      return 'MoonPay checkout is unavailable right now. You can still pay directly in Bitcoin: copy the wallet address above, send the exact amount shown, then paste the transaction ID below.';
+      return 'MoonPay is not configured: the publishable API key (pk_...) is missing from this platform\u2019s settings. The administrator must copy it from dashboard.moonpay.com and save it under Admin \u2192 Settings \u2192 MoonPay publishable API key. Until then you can pay directly in Bitcoin: copy the wallet address above, send the exact amount shown, then paste the transaction ID below.';
     }
     if (e && e.code === 'MOONPAY_BAD_URL') {
       return 'We could not create a valid MoonPay checkout link. Please try again in a moment, or pay directly in Bitcoin using the details above.';
     }
     return 'We could not start the MoonPay checkout: ' + UI.apiErrorMessage(e) + ' You can pay directly in Bitcoin using the details above.';
+  }
+
+  function moonpayToastText(e) {
+    if (e && e.code === 'MOONPAY_NOT_CONFIGURED') {
+      return 'MoonPay is not configured — the admin must add the publishable key in Admin \u2192 Settings.';
+    }
+    if (e && e.code === 'MOONPAY_BAD_URL') {
+      return 'Could not create a MoonPay checkout link. Try again, or pay in Bitcoin directly.';
+    }
+    return 'Could not start the MoonPay checkout: ' + UI.apiErrorMessage(e);
   }
 
   function setMoonpayButtonsBusy(busy) {
@@ -451,7 +461,7 @@
       const text = moonpayErrorText(e);
       const el = document.getElementById('otp-moonpay-error');
       if (el) el.textContent = text;
-      UI.toast(text, 'error');
+      UI.toast(moonpayToastText(e), 'error');
     }
   }
 
@@ -468,7 +478,7 @@
         '<h3 class="otp-redirect-title">Opening MoonPay…</h3>' +
         '<p class="text-sm text-muted">You are being redirected to MoonPay\u2019s secure checkout to pay for your OTP code. Complete the payment there, then come back here to submit the Bitcoin transaction ID — the redirect never counts as proof of payment.</p>' +
         '<div class="otp-redirect-actions">' +
-          '<a class="btn btn-primary" id="otp-redirect-link" href="' + UI.escapeHtml(url) + '">Continue to MoonPay</a>' +
+          '<a class="btn btn-primary" id="otp-redirect-link" href="' + UI.escapeHtml(url) + '">Open MoonPay</a>' +
           '<button class="btn btn-outline" id="otp-redirect-cancel" type="button">Cancel — stay here</button>' +
         '</div>' +
         '<p class="text-sm text-muted" id="otp-redirect-note">If the page does not open automatically, use the button above.</p>' +
@@ -488,7 +498,7 @@
         window.location.assign(url);
       } catch (e) {
         const note = document.getElementById('otp-redirect-note');
-        if (note) note.textContent = 'Automatic redirect failed. Click “Continue to MoonPay” above to open the checkout manually.';
+        if (note) note.textContent = 'Automatic redirect failed. Click “Open MoonPay” above to open the checkout manually.';
         state.redirecting = false;
         setMoonpayButtonsBusy(false);
       }
