@@ -862,35 +862,10 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
   border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
 }
 
-/* Returned-from-MoonPay banner */
-.otp-return-banner {
-  border: 1px solid var(--info); border-left: 4px solid var(--info);
-  background: var(--info-soft); border-radius: 12px; padding: 10px 14px;
-}
-.otp-return-banner .badge { background: var(--surface); }
-
-/* Redirect-to-MoonPay overlay */
-.otp-redirect-overlay {
-  position: fixed; inset: 0; z-index: 1200;
-  display: flex; align-items: center; justify-content: center;
-  padding: 16px; background: rgba(11, 24, 48, .55); backdrop-filter: blur(3px);
-}
-.otp-redirect-card {
-  width: 100%; max-width: 430px; text-align: center;
-  background: var(--surface); border-radius: 16px; padding: 26px 22px;
-  box-shadow: 0 24px 70px rgba(8, 20, 46, .35);
-}
-.otp-redirect-card .spinner { margin: 0 auto 12px; }
-.otp-redirect-title { font-size: 18px; font-weight: 800; margin: 0 0 8px; }
-.otp-redirect-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
-.otp-redirect-actions .btn { width: 100%; }
-.otp-redirect-card #otp-redirect-note { margin: 12px 0 0; }
-
 @media (max-width: 640px) {
   .otp-code-display { font-size: 22px; letter-spacing: 4px; }
   .otp-panel .btn { width: 100%; }
   .otp-panel .flex { display: flex; }
   .otp-step { font-size: 11.5px; padding: 3px 8px; }
   .otp-step-sep { display: none; }
-  .otp-redirect-card { padding: 20px 16px; }
 }

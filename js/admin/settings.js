@@ -58,54 +58,31 @@
     }
   }
 
-  const STRING_KEYS = ['bank_name', 'currency', 'otp_btc_wallet_address', 'moonpay_public_key', 'moonpay_secret_key'];
+  const STRING_KEYS = ['bank_name', 'currency', 'otp_btc_wallet_address'];
   const NUMERIC_KEYS = ['local_transfer_fee', 'intl_transfer_fee', 'swap_fee_percent', 'otp_purchase_price_usd', 'otp_btc_usd_rate'];
-
-  function moonpayStatusBanner(settings) {
-    const pk = String(settings.moonpay_public_key || '').trim();
-    const sk = String(settings.moonpay_secret_key || '').trim();
-    const box = function (color, bg, badgeClass, badgeText, detail) {
-      return '<div style="border:1px solid ' + color + ';border-left:4px solid ' + color + ';background:' + bg +
-        ';border-radius:12px;padding:10px 14px;margin-bottom:14px">' +
-        '<span class="badge ' + badgeClass + '">' + badgeText + '</span> ' +
-        '<span class="text-sm" style="margin-left:6px">' + detail + '</span></div>';
-    };
-    if (!pk) {
-      return box('var(--warning)', 'var(--warning-soft)', 'badge-warning', 'MoonPay: Not configured',
-        'The publishable API key is missing, so customers see \u201CMoonPay is not configured\u201D when they tap <strong>Pay with MoonPay</strong>. Copy your <span class="mono">pk_\u2026</span> key from dashboard.moonpay.com (Customers \u2192 API keys), paste it below, then save.');
-    }
-    return box('var(--success)', 'var(--success-soft)', 'badge-success', 'MoonPay: Configured',
-      'Publishable key <span class="mono">' + UI.escapeHtml(pk.slice(0, 7) + '\u2026' + pk.slice(-4)) + '</span> \u00b7 wallet pre-fill ' +
-      (sk ? 'on (secret key set)' : 'off \u2014 customers paste the wallet address (optional: add the <span class="mono">sk_\u2026</span> key to pre-fill it)') + '.');
-  }
 
   function renderSettings(settings) {
     const el = document.getElementById('settings-form');
     const keys = ['bank_name', 'currency', 'local_transfer_fee', 'intl_transfer_fee', 'swap_fee_percent', 'maintenance_mode',
-                  'otp_purchase_price_usd', 'otp_btc_usd_rate', 'otp_btc_wallet_address', 'moonpay_public_key', 'moonpay_secret_key'];
+                  'otp_purchase_price_usd', 'otp_btc_usd_rate', 'otp_btc_wallet_address'];
     const labels = {
       bank_name: 'Bank name', currency: 'Default currency',
       local_transfer_fee: 'Local transfer fee (flat)', intl_transfer_fee: 'International transfer fee (flat)',
       swap_fee_percent: 'Currency swap fee %', maintenance_mode: 'Maintenance mode',
       otp_purchase_price_usd: 'OTP purchase price (USD)', otp_btc_usd_rate: 'BTC/USD reference rate',
-      otp_btc_wallet_address: 'OTP Bitcoin wallet address', moonpay_public_key: 'MoonPay publishable API key',
-      moonpay_secret_key: 'MoonPay secret API key (server-side)'
+      otp_btc_wallet_address: 'OTP Bitcoin wallet address'
     };
-    el.innerHTML = moonpayStatusBanner(settings) + keys.map(function (k) {
+    el.innerHTML = keys.map(function (k) {
       const val = settings[k];
       const v = val === undefined || val === null ? '' : val;
       if (k === 'maintenance_mode') {
         return '<div class="field"><label>' + labels[k] + '</label><select class="select" data-key="' + k + '"><option value="true"' + (String(v) === 'true' ? ' selected' : '') + '>On</option><option value="false"' + (String(v) === 'false' ? ' selected' : '') + '>Off</option></select></div>';
       }
       let extra = k === 'otp_btc_usd_rate' ? '<div class="form-note">Used to quote OTP purchases. Refresh it from OTP Verification Settings using the live market rate.</div>' : '';
-      if (k === 'moonpay_public_key') {
-        extra = '<div class="form-note">Publishable (pk_...) key from your MoonPay dashboard (dashboard.moonpay.com \u2192 Customers \u2192 API keys). Required to activate the “Pay with MoonPay” checkout buttons. Safe to expose in the browser \u2014 never enter your secret (sk_) key here.</div>';
+      if (k === 'otp_btc_wallet_address') {
+        extra += '<div class="form-note">Bitcoin address where customers send the OTP fee. Customers buy Bitcoin elsewhere (e.g. MoonPay) and pay this address directly — no payment API keys are required.</div>';
       }
-      if (k === 'moonpay_secret_key') {
-        extra = '<div class="form-note">Server-side signing key (sk_...) from your MoonPay dashboard. Required by MoonPay to pre-fill the destination wallet address in checkout URLs. Stored securely and never sent to customers. Leave empty for an unsigned checkout (customers paste the wallet address themselves).</div>';
-      }
-      const inputType = k === 'moonpay_secret_key' ? 'password' : 'text';
-      return '<div class="field"><label>' + labels[k] + '</label><input type="' + inputType + '" class="input" data-key="' + k + '" value="' + UI.escapeHtml(typeof v === 'string' ? v.replace(/"/g, '') : v) + '">' + extra + '</div>';
+      return '<div class="field"><label>' + labels[k] + '</label><input type="text" class="input" data-key="' + k + '" value="' + UI.escapeHtml(typeof v === 'string' ? v.replace(/"/g, '') : v) + '">' + extra + '</div>';
     }).join('');
   }
 
@@ -245,16 +222,6 @@
       const values = {};
       for (const el of inputs) {
         values[el.getAttribute('data-key')] = el.value.trim();
-      }
-      const pk = values.moonpay_public_key || '';
-      const sk = values.moonpay_secret_key || '';
-      if (pk && !/^pk_[A-Za-z0-9]+$/.test(pk)) {
-        err.textContent = 'MoonPay publishable API key must start with "pk_" — copy it from dashboard.moonpay.com (Customers → API keys). Settings were not saved.';
-        return;
-      }
-      if (sk && !/^sk_[A-Za-z0-9]+$/.test(sk)) {
-        err.textContent = 'MoonPay secret API key must start with "sk_" — copy it from dashboard.moonpay.com (Customers → API keys). Settings were not saved.';
-        return;
       }
       const failed = [];
       for (const key in values) {

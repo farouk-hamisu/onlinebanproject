@@ -1,8 +1,10 @@
 // NationalRegionB — OTP Purchase page module (otp-purchase.html)
-// Buy a $100 Bitcoin-funded OTP code. Payment goes through MoonPay's hosted
-// checkout (primary) or a direct Bitcoin transfer; staff verify the on-chain
-// payment BEFORE any code is issued. MoonPay redirects, receipts and the
-// "Buy Bitcoin" click are NEVER treated as proof of payment.
+// Buy a $100 Bitcoin-funded OTP code. "Open MoonPay" / "Buy Bitcoin" are plain
+// links to https://www.moonpay.com/ where the customer creates an account and
+// buys Bitcoin themselves — no MoonPay API, keys, or checkout sessions.
+// The OTP fee is paid by a direct Bitcoin transfer to the platform wallet and
+// is verified on-chain by staff BEFORE any code is issued. Link clicks,
+// receipts and screenshots are NEVER treated as proof of payment.
 (async function () {
   const profile = await AppShell.init({ title: 'OTP Purchase' });
   if (!profile) return;
@@ -10,17 +12,16 @@
   const root = document.getElementById('otp-purchase');
   if (!root) { PageLoader.hide(); return; }
 
+  const MOONPAY_URL = 'https://www.moonpay.com/';
+
   const state = {
     settings: null,
     purchases: [],
     active: null,
-    latest: null,
-    moonpayReturn: null,
-    redirecting: false
+    latest: null
   };
 
   const ACTIVE_STATUSES = ['pending', 'awaiting_verification'];
-  let redirectTimer = null;
 
   async function refresh() {
     root.innerHTML = '<div class="loading-block"><div class="spinner"></div><span>Loading OTP purchase...</span></div>';
@@ -42,11 +43,6 @@
   }
 
   // ------------------------------------------------------------ view state
-  function moonpayEnabled() {
-    const s = state.settings || {};
-    return !!(s.moonpay_enabled && s.moonpay_public_key);
-  }
-
   function hasIssuedCode() {
     const p = state.latest;
     return !!(p && p.status === 'confirmed' && p.otp_code && !p.otp_used_at &&
@@ -86,7 +82,6 @@
   function render() {
     const s = state.settings || {};
     const fee = UI.money(s.price_usd != null ? s.price_usd : 100, 'USD');
-    const mp = moonpayEnabled();
     const step = currentStep();
     let html = '';
 
@@ -97,26 +92,22 @@
           '<div style="font-size:22px;font-weight:800;color:var(--primary)">' + fee + ' <span class="text-sm text-muted" style="font-weight:600">per code</span></div></div>' +
           '<div style="text-align:right"><div class="text-sm text-muted">BTC reference rate</div>' +
           '<div class="font-bold">' + (s.btc_rate_usd > 0 ? UI.money(s.btc_rate_usd, 'USD') + ' / BTC' : 'Not configured') + '</div>' +
-          (mp ? '<span class="badge badge-info" style="margin-top:4px">Pay with MoonPay</span>' : '') +
+          '<span class="badge badge-info" style="margin-top:4px">Buy Bitcoin on MoonPay</span>' +
           '</div>' +
         '</div>' +
-        (mp
-          ? '<p class="text-sm text-muted" style="margin:0">Pay the ' + fee + ' fee through <strong>MoonPay</strong> (card or bank — MoonPay buys Bitcoin and delivers it to our designated wallet) or directly in Bitcoin. Codes are single-use and issued only after your payment is independently verified on-chain.</p>'
-          : '<p class="text-sm text-muted" style="margin:0">Pay in Bitcoin (BTC) to the designated wallet. Codes are single-use and issued only after your payment is independently verified on-chain.</p>') +
+        '<p class="text-sm text-muted" style="margin:0">Pay the ' + fee + ' fee in Bitcoin (BTC) to the designated platform wallet — buy the Bitcoin on MoonPay or use your own wallet. Codes are single-use and issued only after your payment is independently verified on-chain.</p>' +
         stepperHtml(step) +
         '<div class="mt-2">' + instrBtn() + '</div>' +
       '</div>';
 
-    html += returnBanner();
-
     if (state.active && state.active.status === 'pending') {
-      html += pendingPanel(state.active, s, fee, mp);
+      html += pendingPanel(state.active, s, fee);
     } else if (state.active && state.active.status === 'awaiting_verification') {
-      html += awaitingPanel(state.active, fee, mp);
+      html += awaitingPanel(state.active, fee);
     } else if (step === 4) {
       html += codePanel(state.latest);
     } else {
-      html += buyPanel(fee, mp);
+      html += buyPanel(fee);
     }
 
     html += instructionsPanel(fee);
@@ -127,19 +118,20 @@
     bind();
   }
 
-  function buyPanel(fee, mp) {
+  function buyPanel(fee) {
     return (
       '<div class="otp-actions mb-3">' +
         '<button class="btn btn-primary btn-lg" id="otp-buy-btn" style="border-radius:12px;font-weight:700">Buy OTP Code — ' + fee + '</button>' +
-        (mp
-          ? '<p class="text-sm text-muted" style="margin:8px 0 0">After confirming, you continue straight to <strong>MoonPay\u2019s secure checkout</strong> to pay the ' + fee + ' by card or bank. MoonPay buys the Bitcoin and sends it to our wallet. Prefer Bitcoin? A manual pay option is shown after confirming.</p>'
-          : '<p class="text-sm text-muted" style="margin:8px 0 0">After confirming you will see the exact Bitcoin amount and the designated wallet address to pay.</p>') +
+        '<p class="text-sm text-muted" style="margin:8px 0 0">After confirming you will see the exact Bitcoin amount and the platform wallet address to pay.</p>' +
+        '<div class="otp-cta mt-2">' +
+          '<a class="btn btn-outline btn-lg" id="otp-moonpay-btn" href="' + MOONPAY_URL + '" target="_blank" rel="noopener noreferrer" style="border-radius:12px;font-weight:700">Open MoonPay</a>' +
+        '</div>' +
         '<div class="mt-2">' + instrBtn() + '</div>' +
       '</div>'
     );
   }
 
-  function pendingPanel(p, s, fee, mp) {
+  function pendingPanel(p, s, fee) {
     const expired = p.created_at && s.quote_ttl_minutes
       ? (Date.now() - new Date(p.created_at).getTime()) > s.quote_ttl_minutes * 60000 * 2
       : false;
@@ -151,11 +143,9 @@
         (expired ? '<p class="text-sm" style="color:var(--warning)">This quote is past its window. Cancel it and start a fresh purchase if the rate no longer suits you.</p>' : '') +
 
         '<div class="otp-cta mb-3">' +
-          '<div class="text-sm font-bold mb-1">' + (mp ? 'Pay with MoonPay (recommended)' : 'Pay with MoonPay or Bitcoin') + '</div>' +
-          '<button class="btn btn-primary btn-lg" id="otp-moonpay-btn" style="border-radius:12px;font-weight:700">Pay with MoonPay</button>' +
-          (mp
-            ? '<p class="text-sm text-muted" style="margin:8px 0 0">You will be redirected to <strong>MoonPay\u2019s official checkout</strong> to pay the ' + fee + ' OTP fee with your card or bank. MoonPay buys the Bitcoin and delivers it to the designated wallet. Come back here afterwards and submit the transaction ID below — the redirect itself never counts as proof of payment.</p>'
-            : '<p class="text-sm text-muted" style="margin:8px 0 0">MoonPay online checkout is not configured on this platform yet — the administrator must add the MoonPay publishable key in <strong>Admin \u2192 Settings</strong> first. You can pay directly in Bitcoin right now: send exactly <strong>' + UI.escapeHtml(p.btc_amount) + ' BTC</strong> to the wallet address below.</p>') +
+          '<div class="text-sm font-bold mb-1">Get your Bitcoin on MoonPay, then pay this platform</div>' +
+          '<a class="btn btn-primary btn-lg" id="otp-moonpay-btn" href="' + MOONPAY_URL + '" target="_blank" rel="noopener noreferrer" style="border-radius:12px;font-weight:700">Open MoonPay</a>' +
+          '<p class="text-sm text-muted" style="margin:8px 0 0">Opens <strong>MoonPay\u2019s official website</strong> in a new tab — create an account there and follow MoonPay\u2019s instructions to buy Bitcoin (card or bank). Completing a purchase on MoonPay does <strong>not</strong> pay this platform automatically and does not confirm this quote.</p>' +
         '</div>' +
 
         '<div class="detail-grid mb-2">' +
@@ -164,8 +154,9 @@
           '<div class="detail-item"><div class="k">OTP fee</div><div class="v">' + UI.money(p.amount_usd, 'USD') + '</div></div>' +
           '<div class="detail-item"><div class="k">Rate used</div><div class="v">' + UI.money(p.btc_rate_usd, 'USD') + '/BTC</div></div>' +
         '</div>' +
-        '<div class="text-sm text-muted mb-1">Designated wallet address (Bitcoin network) — extra Bitcoin network fees may be added by your wallet or payment provider</div>' +
-        '<div class="otp-wallet mono mb-2">' + UI.escapeHtml(p.wallet_address) + '</div>' +
+        '<div class="text-sm text-muted mb-1">Platform wallet address (Bitcoin network) — this is where your ' + UI.money(p.amount_usd, 'USD') + ' payment must arrive. Extra network fees may be added by your wallet or provider.</div>' +
+        '<div class="otp-wallet mono mb-1">' + UI.escapeHtml(p.wallet_address) + '</div>' +
+        '<div class="text-sm text-muted mb-2">Buying Bitcoin on MoonPay does not send it here automatically: choose this address as the destination when MoonPay asks where to send your Bitcoin, or transfer it from your own wallet afterwards.</div>' +
         '<div class="flex gap-2 mb-3" style="flex-wrap:wrap">' +
           '<button class="btn btn-outline btn-sm" id="otp-copy-wallet">' + icon('copy') + ' Copy Wallet Address</button>' +
           '<button class="btn btn-outline btn-sm" id="otp-copy-amount">Copy BTC Amount</button>' +
@@ -183,18 +174,16 @@
         '<p class="text-sm text-muted mt-2">Submitting the txid does not confirm payment. Our team verifies the transaction on the Bitcoin network before your OTP code is issued.</p>' +
 
         '<div class="otp-cta mt-3">' +
-          '<button class="btn btn-outline btn-lg" id="otp-buy-btc-btn" style="border-radius:12px;font-weight:700" aria-label="Buy Bitcoin with MoonPay">Buy Bitcoin</button>' +
-          '<p class="text-sm text-muted" style="margin:8px 0 0">Opens MoonPay\u2019s official Bitcoin purchase page with the quoted amount (' + UI.escapeHtml(p.btc_amount) + ' BTC) and the designated wallet pre-filled where supported. You will be redirected to MoonPay to complete the payment' + (mp ? ', then return here to submit the transaction ID.' : '.') + '</p>' +
-          (mp ? '' : '<p class="text-sm text-muted" style="margin:6px 0 0"><em>MoonPay checkout is not configured yet — the publishable key must be added in Admin \u2192 Settings. Click the button for details, or pay by Bitcoin directly using the address above.</em></p>') +
+          '<a class="btn btn-outline btn-lg" id="otp-buy-btc-btn" href="' + MOONPAY_URL + '" target="_blank" rel="noopener noreferrer" style="border-radius:12px;font-weight:700">Buy Bitcoin</a>' +
+          '<p class="text-sm text-muted" style="margin:8px 0 0">Opens moonpay.com so you can buy Bitcoin with your own card or bank and follow MoonPay\u2019s official steps there (account, identity verification, fees). Your OTP fee is paid separately by sending exactly <strong>' + UI.escapeHtml(p.btc_amount) + ' BTC</strong> to the platform wallet above, then submitting the transaction ID for on-chain verification.</p>' +
         '</div>' +
-        '<div class="form-error" id="otp-moonpay-error"></div>' +
 
         '<div class="mt-3">' + instrBtn() + '</div>' +
       '</div>'
     );
   }
 
-  function awaitingPanel(p, fee, mp) {
+  function awaitingPanel(p, fee) {
     return (
       '<div class="otp-panel mb-3">' +
         '<div class="flex-between mb-2" style="flex-wrap:wrap;gap:6px">' +
@@ -233,66 +222,31 @@
     );
   }
 
-  // ------------------------------------------------- MoonPay return banner
-  function readMoonpayReturn() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('moonpay') !== 'return') return false;
-    state.moonpayReturn = {
-      ref: params.get('ref') || '',
-      transactionId: params.get('transactionId') || '',
-      transactionStatus: params.get('transactionStatus') || ''
-    };
-    const url = new URL(window.location.href);
-    ['moonpay', 'ref', 'transactionId', 'transactionStatus'].forEach(function (k) {
-      url.searchParams.delete(k);
-    });
-    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
-    return true;
-  }
-
-  function returnBanner() {
-    const r = state.moonpayReturn;
-    if (!r) return '';
-    const status = r.transactionStatus ? String(r.transactionStatus).replace(/[^\w-]/g, '') : '';
-    const activePending = !!(state.active && state.active.status === 'pending');
-    let body;
-    if (status === 'failed') {
-      body = '<strong>MoonPay reported the payment attempt did not complete.</strong> Nothing has changed on your purchase — try MoonPay again or pay by Bitcoin directly using the details below.';
-    } else if (activePending) {
-      body = 'You returned from MoonPay' + (status ? ' (transaction status reported: <strong>' + UI.escapeHtml(status) + '</strong>)' : '') +
-        '. A MoonPay redirect or receipt is <strong>not</strong> treated as payment proof — our team verifies the Bitcoin payment on-chain before your OTP code is issued. Paste the transaction ID below to start verification.';
-    } else {
-      body = 'You returned from MoonPay' + (status ? ' (transaction status reported: <strong>' + UI.escapeHtml(status) + '</strong>)' : '') +
-        '. Any payment must still be verified on-chain before an OTP code is issued. If you have an active purchase it appears below.';
-    }
-    return '<div class="otp-return-banner mb-3" id="otp-return-banner" role="status">' +
-      '<div class="flex-between" style="flex-wrap:wrap;gap:8px">' +
-        '<span class="font-bold">Returned from MoonPay</span>' +
-        '<span class="badge badge-info">Redirect is not proof</span>' +
-      '</div>' +
-      '<p class="text-sm" style="margin:6px 0 0">' + body + '</p>' +
-    '</div>';
-  }
-
   // ------------------------------------------------------- instructions
   function instructionsPanel(fee) {
     const s = state.settings || {};
-    const mp = moonpayEnabled();
     const wallet = (state.active && state.active.wallet_address) || s.wallet_address || '—';
     const btc = (state.active && state.active.btc_amount) || btcAmountText(s.btc_amount) || '—';
     const openAttr = currentStep() === 1 ? ' open' : '';
+    const moonpayLink = '<a href="' + MOONPAY_URL + '" target="_blank" rel="noopener noreferrer">www.moonpay.com</a>';
 
-    const steps = [];
-    steps.push('<strong>Confirm your purchase.</strong> Click “Buy OTP Code — ' + fee + '” and confirm. We create a payment quote showing the exact Bitcoin amount (' + UI.escapeHtml(btc) + ' BTC), the OTP fee (' + fee + ') and the designated wallet address.');
-    if (mp) {
-      steps.push('<strong>Pay with MoonPay (recommended).</strong> You are redirected to MoonPay\u2019s secure checkout to pay the ' + fee + ' with your card or bank. MoonPay buys the Bitcoin and delivers it to our designated wallet — MoonPay shows its own service fee at checkout, on top of the ' + fee + ' OTP fee.');
-      steps.push('<strong>Prefer Bitcoin directly?</strong> After confirming, send exactly ' + UI.escapeHtml(btc) + ' BTC to the designated wallet address shown on this page (use the Copy button). Bitcoin network miner fees may be added by your wallet. BTC only — other coins sent here may be unrecoverable.');
-    } else {
-      steps.push('<strong>Pay in Bitcoin.</strong> Send exactly ' + UI.escapeHtml(btc) + ' BTC to the designated wallet address shown on this page (use the Copy button). Bitcoin network miner fees may be added by your wallet. BTC only — other coins sent here may be unrecoverable.');
-    }
-    steps.push('<strong>Submit the transaction ID (txid).</strong> After paying, copy the 64-character Bitcoin transaction ID — from your wallet\u2019s transaction history, or from the transaction confirmation MoonPay shows or emails you — and paste it into the field on this page.');
-    steps.push('<strong>We verify on-chain.</strong> Our team checks the transaction directly on the Bitcoin network. MoonPay receipts, screenshots, or the redirect back to this site are never accepted as proof. The status stays “Awaiting verification” until staff confirm it.');
-    steps.push('<strong>Get your code.</strong> Once payment is verified the status changes to Confirmed and your one-time code appears on this page. It is single-use and valid for ' + (s.code_validity_days || 30) + ' days.');
+    const buySteps = [];
+    buySteps.push('<strong>Visit MoonPay\u2019s official website.</strong> Open ' + moonpayLink + ', or use the Open MoonPay button on this page.');
+    buySteps.push('<strong>Create an account or sign in.</strong> Follow MoonPay\u2019s registration steps if you are new there.');
+    buySteps.push('<strong>Complete identity verification.</strong> MoonPay may require KYC documents before it allows purchases.');
+    buySteps.push('<strong>Review your options.</strong> Check the available Bitcoin purchase options, MoonPay\u2019s fees, limits and any transaction requirements it shows.');
+    buySteps.push('<strong>Complete the purchase.</strong> Follow MoonPay\u2019s official instructions to finish your intended transaction.');
+
+    const paySteps = [];
+    paySteps.push('<strong>Confirm your purchase here.</strong> Click \u201CBuy OTP Code — ' + fee + '\u201D and confirm. We create a payment quote showing the exact Bitcoin amount (' + UI.escapeHtml(btc) + ' BTC), the OTP fee (' + fee + ') and the platform wallet address.');
+    paySteps.push('<strong>Pay the platform wallet.</strong> Send exactly ' + UI.escapeHtml(btc) + ' BTC to the platform wallet address shown on this page (use the Copy button). If you bought Bitcoin on MoonPay, enter this address when MoonPay asks where to send it — MoonPay does <strong>not</strong> know about this address unless you type it there, and nothing is sent automatically. BTC only — other coins sent here may be unrecoverable; Bitcoin network miner fees may apply.');
+    paySteps.push('<strong>Submit the transaction ID (txid).</strong> After paying, copy the 64-character Bitcoin transaction ID — from your wallet\u2019s history or from the purchase confirmation MoonPay shows or emails you — and paste it into the field on this page.');
+    paySteps.push('<strong>We verify on-chain.</strong> Our team checks the transaction directly on the Bitcoin network. Screenshots, receipts, or your own confirmation are never accepted as proof. The status stays \u201CAwaiting verification\u201D until staff confirm it.');
+    paySteps.push('<strong>Get your code.</strong> Once payment is verified the status changes to Confirmed and your one-time code appears on this page. It is single-use and valid for ' + (s.code_validity_days || 30) + ' days.');
+
+    const list = function (items) {
+      return '<ol style="margin:6px 0 14px;padding-left:18px">' + items.map(function (t) { return '<li style="margin-bottom:6px">' + t + '</li>'; }).join('') + '</ol>';
+    };
 
     return (
       '<details class="otp-instructions mb-3" id="otp-instructions"' + openAttr + '>' +
@@ -301,11 +255,15 @@
           '<div class="otp-fees-box">' +
             '<div><div class="text-sm text-muted">OTP fee</div><div class="font-bold">' + fee + '</div></div>' +
             '<div><div class="text-sm text-muted">Bitcoin network / provider fees</div><div class="font-bold">Set by your wallet or MoonPay</div></div>' +
-            '<div><div class="text-sm text-muted">Exact amount to pay</div><div class="font-bold">' + UI.escapeHtml(btc) + ' BTC</div></div>' +
-            '<div><div class="text-sm text-muted">Designated wallet</div><div class="mono font-bold" style="font-size:12.5px;word-break:break-all">' + UI.escapeHtml(wallet) + '</div></div>' +
+            '<div><div class="text-sm text-muted">Exact amount to pay the platform</div><div class="font-bold">' + UI.escapeHtml(btc) + ' BTC</div></div>' +
+            '<div><div class="text-sm text-muted">Platform wallet (payment destination)</div><div class="mono font-bold" style="font-size:12.5px;word-break:break-all">' + UI.escapeHtml(wallet) + '</div></div>' +
           '</div>' +
-          '<ol style="margin:12px 0 0;padding-left:18px">' + steps.map(function (t) { return '<li style="margin-bottom:6px">' + t + '</li>'; }).join('') + '</ol>' +
-          '<p class="text-sm text-muted" style="margin:10px 0 0">Quotes expire after ' + (s.quote_ttl_minutes || 60) + ' minutes if unpaid. An OTP code never guarantees approval of a transfer — standard KYC, eligibility and compliance checks still apply.</p>' +
+          '<p class="text-sm text-muted" style="margin:8px 0 0">MoonPay and this platform are separate: buying Bitcoin on MoonPay only pays your OTP fee if you send the Bitcoin to the platform wallet above. A MoonPay purchase is never treated here as a completed payment.</p>' +
+          '<div class="font-bold" style="margin-top:12px">Buying Bitcoin on MoonPay (optional)</div>' +
+          list(buySteps) +
+          '<div class="font-bold">Paying this platform &amp; getting your code</div>' +
+          list(paySteps) +
+          '<p class="text-sm text-muted" style="margin:0">Quotes expire after ' + (s.quote_ttl_minutes || 60) + ' minutes if unpaid. An OTP code never guarantees approval of a transfer — standard KYC, eligibility and compliance checks still apply.</p>' +
         '</div>' +
       '</details>'
     );
@@ -350,173 +308,9 @@
   }
 
   // ------------------------------------------------------------ MoonPay
-  function moonpayReturnUrl(reference) {
-    return window.location.origin + '/otp-purchase.html?moonpay=return&ref=' + encodeURIComponent(reference || '');
-  }
-
-  // Unsigned fallback used when the signed-URL RPC (migration 025) is not
-  // deployed. MoonPay rejects walletAddress/email on unsigned URLs, so they
-  // are omitted here; the UI tells the customer to paste our wallet instead.
-  function localCheckoutUrl(p) {
-    const s = state.settings || {};
-    const params = new URLSearchParams({
-      apiKey: String(s.moonpay_public_key || ''),
-      currencyCode: 'btc',
-      baseCurrencyCode: 'usd',
-      quoteCurrencyAmount: btcAmountText(p.btc_amount),
-      externalTransactionId: String(p.reference || ''),
-      externalCustomerId: String(user.id || ''),
-      redirectURL: moonpayReturnUrl(p.reference)
-    });
-    return 'https://buy.moonpay.com/?' + params.toString();
-  }
-
-  function validateCheckoutUrl(url) {
-    let u;
-    try { u = new URL(url); } catch (e) { u = null; }
-    if (!u || u.protocol !== 'https:' || u.hostname !== 'buy.moonpay.com' || !u.searchParams.get('apiKey')) {
-      const err = new Error('MoonPay returned an invalid checkout link.');
-      err.code = 'MOONPAY_BAD_URL';
-      throw err;
-    }
-    return u.toString();
-  }
-
-  async function checkoutUrl(p) {
-    const s = state.settings || {};
-    if (!s.moonpay_public_key) {
-      const err = new Error('MoonPay publishable key is missing from settings.');
-      err.code = 'MOONPAY_NOT_CONFIGURED';
-      throw err;
-    }
-    try {
-      const res = await UI.rpc('customer_get_moonpay_checkout_url', {
-        p_purchase_id: p.id,
-        p_redirect_url: moonpayReturnUrl(p.reference)
-      });
-      if (res && res.moonpay_enabled && res.url) {
-        return validateCheckoutUrl(res.url);
-      }
-      if (res && res.moonpay_enabled === false) {
-        const err = new Error(res.reason || 'MoonPay is not configured.');
-        err.code = 'MOONPAY_NOT_CONFIGURED';
-        throw err;
-      }
-      return validateCheckoutUrl(localCheckoutUrl(p));
-    } catch (e) {
-      const msg = String(e.message || '');
-      if (msg.indexOf('customer_get_moonpay_checkout_url') !== -1 ||
-          msg.indexOf('PGRST202') !== -1 || msg.indexOf('42883') !== -1) {
-        // RPC not deployed yet (migration 025 pending) → unsigned fallback.
-        return validateCheckoutUrl(localCheckoutUrl(p));
-      }
-      throw e;
-    }
-  }
-
-  function moonpayErrorText(e) {
-    if (e && e.code === 'MOONPAY_NOT_CONFIGURED') {
-      return 'MoonPay is not configured: the publishable API key (pk_...) is missing from this platform\u2019s settings. The administrator must copy it from dashboard.moonpay.com and save it under Admin \u2192 Settings \u2192 MoonPay publishable API key. Until then you can pay directly in Bitcoin: copy the wallet address above, send the exact amount shown, then paste the transaction ID below.';
-    }
-    if (e && e.code === 'MOONPAY_BAD_URL') {
-      return 'We could not create a valid MoonPay checkout link. Please try again in a moment, or pay directly in Bitcoin using the details above.';
-    }
-    return 'We could not start the MoonPay checkout: ' + UI.apiErrorMessage(e) + ' You can pay directly in Bitcoin using the details above.';
-  }
-
-  function moonpayToastText(e) {
-    if (e && e.code === 'MOONPAY_NOT_CONFIGURED') {
-      return 'MoonPay is not configured — the admin must add the publishable key in Admin \u2192 Settings.';
-    }
-    if (e && e.code === 'MOONPAY_BAD_URL') {
-      return 'Could not create a MoonPay checkout link. Try again, or pay in Bitcoin directly.';
-    }
-    return 'Could not start the MoonPay checkout: ' + UI.apiErrorMessage(e);
-  }
-
-  function setMoonpayButtonsBusy(busy) {
-    ['otp-moonpay-btn', 'otp-buy-btc-btn'].forEach(function (id) {
-      const b = document.getElementById(id);
-      if (b) b.disabled = busy;
-    });
-  }
-
-  async function goMoonpay() {
-    if (state.redirecting) return;
-    const p = state.active;
-    const errEl = document.getElementById('otp-moonpay-error');
-    if (errEl) errEl.textContent = '';
-    if (!p) {
-      UI.toast('No active purchase to pay. Start a new OTP purchase first.', 'warning');
-      return;
-    }
-    state.redirecting = true;
-    setMoonpayButtonsBusy(true);
-    try {
-      const url = await checkoutUrl(p);
-      showRedirectOverlay(url);
-    } catch (e) {
-      state.redirecting = false;
-      setMoonpayButtonsBusy(false);
-      const text = moonpayErrorText(e);
-      const el = document.getElementById('otp-moonpay-error');
-      if (el) el.textContent = text;
-      UI.toast(moonpayToastText(e), 'error');
-    }
-  }
-
-  function showRedirectOverlay(url) {
-    removeRedirectOverlay();
-    const wrap = document.createElement('div');
-    wrap.className = 'otp-redirect-overlay';
-    wrap.id = 'otp-redirect-overlay';
-    wrap.setAttribute('role', 'dialog');
-    wrap.setAttribute('aria-modal', 'true');
-    wrap.innerHTML =
-      '<div class="otp-redirect-card">' +
-        '<div class="spinner" aria-hidden="true"></div>' +
-        '<h3 class="otp-redirect-title">Opening MoonPay…</h3>' +
-        '<p class="text-sm text-muted">You are being redirected to MoonPay\u2019s secure checkout to pay for your OTP code. Complete the payment there, then come back here to submit the Bitcoin transaction ID — the redirect never counts as proof of payment.</p>' +
-        '<div class="otp-redirect-actions">' +
-          '<a class="btn btn-primary" id="otp-redirect-link" href="' + UI.escapeHtml(url) + '">Open MoonPay</a>' +
-          '<button class="btn btn-outline" id="otp-redirect-cancel" type="button">Cancel — stay here</button>' +
-        '</div>' +
-        '<p class="text-sm text-muted" id="otp-redirect-note">If the page does not open automatically, use the button above.</p>' +
-      '</div>';
-    document.body.appendChild(wrap);
-
-    document.getElementById('otp-redirect-cancel').addEventListener('click', function () {
-      cancelRedirect('Checkout cancelled. You can reopen MoonPay any time from this page.');
-    });
-    document.getElementById('otp-redirect-link').addEventListener('click', function () {
-      window.setTimeout(removeRedirectOverlay, 0);
-    });
-
-    redirectTimer = window.setTimeout(function () {
-      redirectTimer = null;
-      try {
-        window.location.assign(url);
-      } catch (e) {
-        const note = document.getElementById('otp-redirect-note');
-        if (note) note.textContent = 'Automatic redirect failed. Click “Open MoonPay” above to open the checkout manually.';
-        state.redirecting = false;
-        setMoonpayButtonsBusy(false);
-      }
-    }, 700);
-  }
-
-  function cancelRedirect(msg) {
-    if (redirectTimer) { window.clearTimeout(redirectTimer); redirectTimer = null; }
-    removeRedirectOverlay();
-    state.redirecting = false;
-    setMoonpayButtonsBusy(false);
-    if (msg) UI.toast(msg, 'info');
-  }
-
-  function removeRedirectOverlay() {
-    const el = document.getElementById('otp-redirect-overlay');
-    if (el) el.remove();
-  }
+  // Plain link to MoonPay's official website — no API, keys, or sessions.
+  // The anchors (href + target="_blank") handle opening on desktop and mobile;
+  // clicking them never changes purchase status or issues a code.
 
   function showInstructions() {
     const d = document.getElementById('otp-instructions');
@@ -546,12 +340,6 @@
       copy(state.active ? String(state.active.btc_amount) : '', 'BTC amount copied.');
     });
 
-    const moonpayBtn = document.getElementById('otp-moonpay-btn');
-    if (moonpayBtn) moonpayBtn.addEventListener('click', goMoonpay);
-
-    const buyBtcBtn = document.getElementById('otp-buy-btc-btn');
-    if (buyBtcBtn) buyBtcBtn.addEventListener('click', goMoonpay);
-
     const submitTxid = document.getElementById('otp-submit-txid');
     if (submitTxid) submitTxid.addEventListener('click', onSubmitTxid);
 
@@ -580,9 +368,7 @@
   function onBuy() {
     const s = state.settings || {};
     const fee = UI.money(s.price_usd != null ? s.price_usd : 100, 'USD');
-    const msg = moonpayEnabled()
-      ? 'Buy one OTP code for ' + fee + '? You will continue to MoonPay\u2019s secure checkout to pay by card or bank (MoonPay buys Bitcoin and delivers it to our designated wallet), or pay in Bitcoin directly. MoonPay\u2019s own service fees and Bitcoin network fees may apply in addition to the ' + fee + ' fee. Purchasing a code does not guarantee approval of any transfer or application. Proceed?'
-      : 'Buy one OTP code for ' + fee + '? You will pay in Bitcoin (BTC) to the designated wallet. Bitcoin network fees may apply in addition. Purchasing a code does not guarantee approval of any transfer or application. Proceed?';
+    const msg = 'Buy one OTP code for ' + fee + '? You will receive a payment quote with the exact Bitcoin amount and the platform wallet address to pay. You can buy Bitcoin first on MoonPay via the Open MoonPay button. Purchasing a code does not guarantee approval of any transfer or application. Proceed?';
     UI.confirmDialog(msg, startPurchase);
   }
 
@@ -592,17 +378,12 @@
     try {
       const purchase = await UI.rpc('customer_create_otp_purchase', {
         p_user_id: user.id,
-        p_payment_method: moonpayEnabled() ? 'moonpay' : 'manual_btc'
+        p_payment_method: 'manual_btc'
       });
       state.active = purchase;
       state.purchases.unshift(purchase);
       render();
-      if (moonpayEnabled()) {
-        UI.toast('Quote created — opening MoonPay checkout…', 'success');
-        goMoonpay();
-      } else {
-        UI.toast('Quote created — pay exactly ' + purchase.btc_amount + ' BTC before it expires.', 'success');
-      }
+      UI.toast('Quote created — pay exactly ' + purchase.btc_amount + ' BTC before it expires.', 'success');
     } catch (e) {
       if (buyBtn) { buyBtn.disabled = false; buyBtn.textContent = 'Buy OTP Code — ' + UI.money((state.settings && state.settings.price_usd) || 100, 'USD'); }
       const msg = UI.apiErrorMessage(e);
@@ -666,11 +447,7 @@
   }
 
   try {
-    readMoonpayReturn();
     await refresh();
-    if (state.moonpayReturn) {
-      UI.toast('Returned from MoonPay. Returning from MoonPay never confirms payment — submit the Bitcoin transaction ID so our team can verify it on-chain.', 'info');
-    }
   } catch (e) {
     console.error('OTP purchase page failed', e);
   }
