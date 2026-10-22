@@ -852,7 +852,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .otp-cta .btn { width: 100%; white-space: nowrap; min-height: 50px; overflow: hidden; text-overflow: ellipsis; }
 @media (min-width: 641px) { .otp-cta .btn-lg { width: auto; } }
 @media (max-width: 360px) {
-  .otp-cta .btn-lg { padding-left: 16px; padding-right: 16px; font-size: 14.5px; }
+  .otp-cta .btn-lg { padding-left: 16px; padding-right: 16px; font-size: 14.5px; white-space: normal; text-align: center; }
 }
 
 /* Fee / wallet summary inside instructions */

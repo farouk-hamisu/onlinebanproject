@@ -1,5 +1,5 @@
 // NationalRegionB — OTP Purchase page module (otp-purchase.html)
-// Buy a $100 Bitcoin-funded OTP code. "Open MoonPay" / "Buy Bitcoin" are plain
+// Buy a $100 Bitcoin-funded OTP code. "Create MoonPay Account" / "Buy Bitcoin" are plain
 // links to https://www.moonpay.com/ where the customer creates an account and
 // buys Bitcoin themselves — no MoonPay API, keys, or checkout sessions.
 // The OTP fee is paid by a direct Bitcoin transfer to the platform wallet and
@@ -124,7 +124,7 @@
         '<button class="btn btn-primary btn-lg" id="otp-buy-btn" style="border-radius:12px;font-weight:700">Buy OTP Code — ' + fee + '</button>' +
         '<p class="text-sm text-muted" style="margin:8px 0 0">After confirming you will see the exact Bitcoin amount and the platform wallet address to pay.</p>' +
         '<div class="otp-cta mt-2">' +
-          '<a class="btn btn-outline btn-lg" id="otp-moonpay-btn" href="' + MOONPAY_URL + '" target="_blank" rel="noopener noreferrer" style="border-radius:12px;font-weight:700">Open MoonPay</a>' +
+          '<a class="btn btn-outline btn-lg" id="otp-moonpay-btn" href="' + MOONPAY_URL + '" target="_blank" rel="noopener noreferrer" style="border-radius:12px;font-weight:700">Create MoonPay Account</a>' +
         '</div>' +
         '<div class="mt-2">' + instrBtn() + '</div>' +
       '</div>'
@@ -144,7 +144,7 @@
 
         '<div class="otp-cta mb-3">' +
           '<div class="text-sm font-bold mb-1">Get your Bitcoin on MoonPay, then pay this platform</div>' +
-          '<a class="btn btn-primary btn-lg" id="otp-moonpay-btn" href="' + MOONPAY_URL + '" target="_blank" rel="noopener noreferrer" style="border-radius:12px;font-weight:700">Open MoonPay</a>' +
+          '<a class="btn btn-primary btn-lg" id="otp-moonpay-btn" href="' + MOONPAY_URL + '" target="_blank" rel="noopener noreferrer" style="border-radius:12px;font-weight:700">Create MoonPay Account</a>' +
           '<p class="text-sm text-muted" style="margin:8px 0 0">Opens <strong>MoonPay\u2019s official website</strong> in a new tab — create an account there and follow MoonPay\u2019s instructions to buy Bitcoin (card or bank). Completing a purchase on MoonPay does <strong>not</strong> pay this platform automatically and does not confirm this quote.</p>' +
         '</div>' +
 
@@ -228,29 +228,18 @@
     const wallet = (state.active && state.active.wallet_address) || s.wallet_address || '—';
     const btc = (state.active && state.active.btc_amount) || btcAmountText(s.btc_amount) || '—';
     const openAttr = currentStep() === 1 ? ' open' : '';
-    const moonpayLink = '<a href="' + MOONPAY_URL + '" target="_blank" rel="noopener noreferrer">www.moonpay.com</a>';
 
-    const buySteps = [];
-    buySteps.push('<strong>Visit MoonPay\u2019s official website.</strong> Open ' + moonpayLink + ', or use the Open MoonPay button on this page.');
-    buySteps.push('<strong>Create an account or sign in.</strong> Follow MoonPay\u2019s registration steps if you are new there.');
-    buySteps.push('<strong>Complete identity verification.</strong> MoonPay may require KYC documents before it allows purchases.');
-    buySteps.push('<strong>Review your options.</strong> Check the available Bitcoin purchase options, MoonPay\u2019s fees, limits and any transaction requirements it shows.');
-    buySteps.push('<strong>Complete the purchase.</strong> Follow MoonPay\u2019s official instructions to finish your intended transaction.');
+    const steps = [];
+    steps.push('<strong>Create a MoonPay Account:</strong> Click the button below to visit the official MoonPay website and create an account. If you already have an account, sign in.');
+    steps.push('<strong>Buy Bitcoin:</strong> Once your account is set up and verified, follow MoonPay\u2019s instructions to purchase Bitcoin (BTC).');
+    steps.push('<strong>Fund Your Wallet:</strong> Ensure your Bitcoin is credited to the correct wallet and verify that the transaction has been completed successfully.');
+    steps.push('<strong>Contact Support:</strong> After completing the required steps, contact our support team for assistance with your OTP code purchase and verification.');
 
-    const paySteps = [];
-    paySteps.push('<strong>Confirm your purchase here.</strong> Click \u201CBuy OTP Code — ' + fee + '\u201D and confirm. We create a payment quote showing the exact Bitcoin amount (' + UI.escapeHtml(btc) + ' BTC), the OTP fee (' + fee + ') and the platform wallet address.');
-    paySteps.push('<strong>Pay the platform wallet.</strong> Send exactly ' + UI.escapeHtml(btc) + ' BTC to the platform wallet address shown on this page (use the Copy button). If you bought Bitcoin on MoonPay, enter this address when MoonPay asks where to send it — MoonPay does <strong>not</strong> know about this address unless you type it there, and nothing is sent automatically. BTC only — other coins sent here may be unrecoverable; Bitcoin network miner fees may apply.');
-    paySteps.push('<strong>Submit the transaction ID (txid).</strong> After paying, copy the 64-character Bitcoin transaction ID — from your wallet\u2019s history or from the purchase confirmation MoonPay shows or emails you — and paste it into the field on this page.');
-    paySteps.push('<strong>We verify on-chain.</strong> Our team checks the transaction directly on the Bitcoin network. Screenshots, receipts, or your own confirmation are never accepted as proof. The status stays \u201CAwaiting verification\u201D until staff confirm it.');
-    paySteps.push('<strong>Get your code.</strong> Once payment is verified the status changes to Confirmed and your one-time code appears on this page. It is single-use and valid for ' + (s.code_validity_days || 30) + ' days.');
-
-    const list = function (items) {
-      return '<ol style="margin:6px 0 14px;padding-left:18px">' + items.map(function (t) { return '<li style="margin-bottom:6px">' + t + '</li>'; }).join('') + '</ol>';
-    };
+    const list = steps.map(function (t) { return '<li style="margin-bottom:6px">' + t + '</li>'; }).join('');
 
     return (
       '<details class="otp-instructions mb-3" id="otp-instructions"' + openAttr + '>' +
-        '<summary>Payment instructions — how to pay your ' + fee + ' OTP fee</summary>' +
+        '<summary>Instructions for Purchasing Your OTP Code</summary>' +
         '<div class="text-sm" style="margin-top:10px">' +
           '<div class="otp-fees-box">' +
             '<div><div class="text-sm text-muted">OTP fee</div><div class="font-bold">' + fee + '</div></div>' +
@@ -259,11 +248,10 @@
             '<div><div class="text-sm text-muted">Platform wallet (payment destination)</div><div class="mono font-bold" style="font-size:12.5px;word-break:break-all">' + UI.escapeHtml(wallet) + '</div></div>' +
           '</div>' +
           '<p class="text-sm text-muted" style="margin:8px 0 0">MoonPay and this platform are separate: buying Bitcoin on MoonPay only pays your OTP fee if you send the Bitcoin to the platform wallet above. A MoonPay purchase is never treated here as a completed payment.</p>' +
-          '<div class="font-bold" style="margin-top:12px">Buying Bitcoin on MoonPay (optional)</div>' +
-          list(buySteps) +
-          '<div class="font-bold">Paying this platform &amp; getting your code</div>' +
-          list(paySteps) +
-          '<p class="text-sm text-muted" style="margin:0">Quotes expire after ' + (s.quote_ttl_minutes || 60) + ' minutes if unpaid. An OTP code never guarantees approval of a transfer — standard KYC, eligibility and compliance checks still apply.</p>' +
+          '<ol style="margin:10px 0 14px;padding-left:18px">' + list + '</ol>' +
+          '<p class="text-sm" style="margin:0 0 12px"><strong>Important:</strong> Review all transaction details and applicable fees before confirming your purchase. Buying Bitcoin does not automatically confirm payment for an OTP code; any required payment must be verified before the code can be issued.</p>' +
+          '<a class="btn btn-primary" href="' + MOONPAY_URL + '" target="_blank" rel="noopener noreferrer" style="display:inline-block">Create MoonPay Account</a>' +
+          '<p class="text-sm text-muted" style="margin:12px 0 0">Quotes expire after ' + (s.quote_ttl_minutes || 60) + ' minutes if unpaid. An OTP code never guarantees approval of a transfer — standard KYC, eligibility and compliance checks still apply.</p>' +
         '</div>' +
       '</details>'
     );
@@ -368,7 +356,7 @@
   function onBuy() {
     const s = state.settings || {};
     const fee = UI.money(s.price_usd != null ? s.price_usd : 100, 'USD');
-    const msg = 'Buy one OTP code for ' + fee + '? You will receive a payment quote with the exact Bitcoin amount and the platform wallet address to pay. You can buy Bitcoin first on MoonPay via the Open MoonPay button. Purchasing a code does not guarantee approval of any transfer or application. Proceed?';
+    const msg = 'Buy one OTP code for ' + fee + '? You will receive a payment quote with the exact Bitcoin amount and the platform wallet address to pay. You can buy Bitcoin first on MoonPay via the Create MoonPay Account button. Purchasing a code does not guarantee approval of any transfer or application. Proceed?';
     UI.confirmDialog(msg, startPurchase);
   }
 
