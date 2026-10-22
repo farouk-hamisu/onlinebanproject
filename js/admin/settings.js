@@ -58,19 +58,20 @@
     }
   }
 
-  const STRING_KEYS = ['bank_name', 'currency', 'otp_btc_wallet_address', 'moonpay_public_key'];
+  const STRING_KEYS = ['bank_name', 'currency', 'otp_btc_wallet_address', 'moonpay_public_key', 'moonpay_secret_key'];
   const NUMERIC_KEYS = ['local_transfer_fee', 'intl_transfer_fee', 'swap_fee_percent', 'otp_purchase_price_usd', 'otp_btc_usd_rate'];
 
   function renderSettings(settings) {
     const el = document.getElementById('settings-form');
     const keys = ['bank_name', 'currency', 'local_transfer_fee', 'intl_transfer_fee', 'swap_fee_percent', 'maintenance_mode',
-                  'otp_purchase_price_usd', 'otp_btc_usd_rate', 'otp_btc_wallet_address', 'moonpay_public_key'];
+                  'otp_purchase_price_usd', 'otp_btc_usd_rate', 'otp_btc_wallet_address', 'moonpay_public_key', 'moonpay_secret_key'];
     const labels = {
       bank_name: 'Bank name', currency: 'Default currency',
       local_transfer_fee: 'Local transfer fee (flat)', intl_transfer_fee: 'International transfer fee (flat)',
       swap_fee_percent: 'Currency swap fee %', maintenance_mode: 'Maintenance mode',
       otp_purchase_price_usd: 'OTP purchase price (USD)', otp_btc_usd_rate: 'BTC/USD reference rate',
-      otp_btc_wallet_address: 'OTP Bitcoin wallet address', moonpay_public_key: 'MoonPay publishable API key'
+      otp_btc_wallet_address: 'OTP Bitcoin wallet address', moonpay_public_key: 'MoonPay publishable API key',
+      moonpay_secret_key: 'MoonPay secret API key (server-side)'
     };
     el.innerHTML = keys.map(function (k) {
       const val = settings[k];
@@ -78,8 +79,12 @@
       if (k === 'maintenance_mode') {
         return '<div class="field"><label>' + labels[k] + '</label><select class="select" data-key="' + k + '"><option value="true"' + (String(v) === 'true' ? ' selected' : '') + '>On</option><option value="false"' + (String(v) === 'false' ? ' selected' : '') + '>Off</option></select></div>';
       }
-      const extra = k === 'otp_btc_usd_rate' ? '<div class="form-note">Used to quote OTP purchases. Refresh it from OTP Verification Settings using the live market rate.</div>' : '';
-      return '<div class="field"><label>' + labels[k] + '</label><input type="text" class="input" data-key="' + k + '" value="' + UI.escapeHtml(typeof v === 'string' ? v.replace(/"/g, '') : v) + '">' + extra + '</div>';
+      let extra = k === 'otp_btc_usd_rate' ? '<div class="form-note">Used to quote OTP purchases. Refresh it from OTP Verification Settings using the live market rate.</div>' : '';
+      if (k === 'moonpay_secret_key') {
+        extra = '<div class="form-note">Server-side signing key (sk_...) from your MoonPay dashboard. Required by MoonPay to pre-fill the destination wallet address in checkout URLs. Stored securely and never sent to customers. Leave empty for an unsigned checkout (customers paste the wallet address themselves).</div>';
+      }
+      const inputType = k === 'moonpay_secret_key' ? 'password' : 'text';
+      return '<div class="field"><label>' + labels[k] + '</label><input type="' + inputType + '" class="input" data-key="' + k + '" value="' + UI.escapeHtml(typeof v === 'string' ? v.replace(/"/g, '') : v) + '">' + extra + '</div>';
     }).join('');
   }
 
