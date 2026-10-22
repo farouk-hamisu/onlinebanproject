@@ -78,13 +78,13 @@
   ];
 
   const LOGOS = {
-    usdt: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#26A17B"/><text x="20" y="27" text-anchor="middle" font-size="21" font-weight="700" fill="#fff" font-family="Arial, sans-serif">&#8350;</text></svg>',
+    usdt: '<img src="assets/logos/usdtlogo.png" alt="">',
     btc: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#F7931A"/><text x="20" y="27" text-anchor="middle" font-size="21" font-weight="700" fill="#fff" font-family="Arial, sans-serif">&#8383;</text></svg>',
-    paypal: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#003087"/><text x="20" y="27" text-anchor="middle" font-size="20" font-weight="700" fill="#fff" font-family="Arial, sans-serif">P</text></svg>',
+    paypal: '<img src="assets/logos/paypallogo.png" alt="">',
     cashapp: '<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#00D54B"/><text x="20" y="28" text-anchor="middle" font-size="22" font-weight="700" fill="#fff" font-family="Arial, sans-serif">$</text></svg>',
-    wire: '<span class="method-logo-plain">' + ICONS.building + '</span>',
+    wire: '<img src="assets/logos/logo.svg" alt="">',
     wise: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#9FE870"/><text x="20" y="27" text-anchor="middle" font-size="19" font-weight="800" fill="#163300" font-family="Arial, sans-serif">W</text></svg>',
-    payoneer: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#FF4800"/><text x="20" y="27" text-anchor="middle" font-size="20" font-weight="700" fill="#fff" font-family="Arial, sans-serif">P</text></svg>',
+    payoneer: '<img src="assets/logos/payoneer.png" alt="">',
     skrill: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#6C2B95"/><text x="20" y="27" text-anchor="middle" font-size="20" font-weight="700" fill="#fff" font-family="Arial, sans-serif">S</text></svg>',
     stripe: '<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#635BFF"/><text x="20" y="28" text-anchor="middle" font-size="21" font-weight="700" fill="#fff" font-family="Arial, sans-serif">S</text></svg>'
   };
@@ -548,13 +548,9 @@
       if (res.error) throw res.error;
       renderHistory(res.data || []);
     } catch (e) {
-      const raw = (e && e.message ? e.message : String(e)).toLowerCase();
-      if (raw.indexOf('does not exist') !== -1 || raw.indexOf('42p01') !== -1 || raw.indexOf('permission denied') !== -1) {
-        el.innerHTML = UI.emptyState('No withdrawals yet');
-      } else {
-        el.innerHTML = UI.emptyState('No withdrawals yet');
-        UI.toast(UI.apiErrorMessage(e), 'error');
-      }
+      // History is best-effort: pre-migration (table missing) or transient
+      // read failures degrade to a silent empty state.
+      el.innerHTML = UI.emptyState('No withdrawals yet');
     }
   }
 
