@@ -5,7 +5,6 @@ const NAV_ITEMS = [
   { label: 'Transactions', icon: 'transactions', href: 'transactions.html' },
   { label: 'Cards', icon: 'cards', href: 'cards.html' },
   { label: 'Withdraw Funds', icon: 'arrowUp', href: 'withdraw.html' },
-  { label: 'Transfers', icon: 'send', href: 'transfers.html' },
   { label: 'Crypto Withdrawal', icon: 'globe', href: 'crypto-withdrawal.html' },
   { label: 'OTP Purchase', icon: 'key', href: 'otp-purchase.html' },
   { label: 'Deposits', icon: 'deposits', href: 'deposits.html' },
