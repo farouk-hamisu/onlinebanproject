@@ -23,6 +23,56 @@
     </div>
   </div>
   <div id="page-root">
+    <div class="card mb-3" id="user-currency-card">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">User Currency Management</h3>
+          <div class="card-subtitle">Assign or update preferred display currency for individual users (USD, EUR, GBP, NGN, CAD)</div>
+        </div>
+      </div>
+
+      <div class="filter-bar mb-3" style="flex-wrap:wrap;gap:12px;background:var(--card-subtle,#10192e);padding:14px 16px;border-radius:10px;border:1px solid var(--border)">
+        <div style="flex:1 1 280px;min-width:220px">
+          <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;font-weight:600">Select Customer</label>
+          <select class="select w-100" id="uc-user-select">
+            <option value="">Choose a customer...</option>
+          </select>
+        </div>
+        <div style="flex:1 1 240px;min-width:200px">
+          <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;font-weight:600">Assign Preferred Currency</label>
+          <select class="select w-100" id="uc-currency-select">
+            <option value="USD">USD — US Dollar ($) [Platform Default]</option>
+            <option value="EUR">EUR — Euro (€)</option>
+            <option value="GBP">GBP — British Pound (£)</option>
+            <option value="NGN">NGN — Nigerian Naira (₦)</option>
+            <option value="CAD">CAD — Canadian Dollar (C$)</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-primary" id="btn-assign-currency" type="button" style="white-space:nowrap">Assign Currency</button>
+        </div>
+      </div>
+
+      <div class="filter-bar mb-2">
+        <div class="grow"><input type="search" class="input" id="uc-search" placeholder="Search customer by name or email..."></div>
+        <select class="select" id="uc-filter-currency">
+          <option value="">All currencies</option>
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="NGN">NGN (₦)</option>
+          <option value="CAD">CAD (C$)</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <div id="user-currencies-table">
+          <div class="loading-block"><div class="spinner"></div><span>Loading user currencies...</span></div>
+        </div>
+      </div>
+      <div class="pagination" id="uc-pagination"></div>
+    </div>
+
     <div class="card mb-3">
       <div class="card-header"><div><h3 class="card-title">Currencies</h3><div class="card-subtitle">Manage supported currencies</div></div>
         <button class="btn btn-primary btn-sm" id="btn-add-cur">+ Add Currency</button></div>

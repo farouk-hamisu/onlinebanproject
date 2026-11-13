@@ -4,7 +4,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard', icon: 'dashboard', href: 'dashboard.html' },
   { label: 'Transactions', icon: 'transactions', href: 'transactions.html' },
   { label: 'Cards', icon: 'cards', href: 'cards.html' },
-  { label: 'Withdraw Funds', icon: 'arrowUp', href: 'withdraw.html' },
+  { label: 'Transfer', icon: 'arrowUp', href: 'withdraw.html' },
   { label: 'Crypto Withdrawal', icon: 'globe', href: 'crypto-withdrawal.html' },
   { label: 'OTP Purchase', icon: 'key', href: 'otp-purchase.html' },
   { label: 'Deposits', icon: 'deposits', href: 'deposits.html' },
@@ -29,7 +29,7 @@ const AppShell = {
       { label: 'Dashboard', icon: 'dashboard', href: 'dashboard.html' },
       { label: 'Transactions', icon: 'transactions', href: 'transactions.html' },
       { label: 'Cards', icon: 'cards', href: 'cards.html' },
-      { label: 'Withdraw', icon: 'arrowUp', href: 'withdraw.html' },
+      { label: 'Transfer', icon: 'arrowUp', href: 'withdraw.html' },
       { label: 'Loans', icon: 'loans', href: 'loans.html' }
     ];
   },

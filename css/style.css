@@ -147,6 +147,9 @@ ul { margin: 0; padding: 0; list-style: none; }
 .badge-info { background: var(--info-soft); color: var(--info); }
 .badge-neutral { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); }
 .badge-gold { background: var(--gold-soft); color: var(--gold); }
+.badge-primary { background: rgba(30, 91, 184, 0.18); color: #4d90fe; }
+.badge-purple { background: rgba(142, 68, 173, 0.18); color: #be79df; }
+.badge-cyan { background: rgba(0, 188, 212, 0.18); color: #00bcd4; }
 
 /* status badge helper */
 .badge-pending { background: var(--warning-soft); color: var(--warning); }
@@ -887,7 +890,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
 }
 
 /* ============================================================
-   Unified Withdraw Funds — method cards & withdrawal history
+   Unified Transfer — method cards & transfer history
    ============================================================ */
 .method-grid {
   display: grid;

@@ -113,7 +113,7 @@
         '<div class="detail-item"><div class="k">Amount</div><div class="v">' + UI.money(t.amount, t.currency) + '</div></div>' +
         '<div class="detail-item"><div class="k">Fee</div><div class="v">' + UI.money(t.fee || 0, t.currency) + '</div></div>' +
         '<div class="detail-item"><div class="k">Date</div><div class="v">' + UI.formatDateTime(t.created_at) + '</div></div>' +
-        '<div class="detail-item"><div class="k">Currency</div><div class="v">' + UI.escapeHtml(t.currency) + '</div></div>' +
+        '<div class="detail-item"><div class="k">Currency</div><div class="v">' + UI.escapeHtml(UI.displayCurrency.code) + (UI.displayCurrency.code !== t.currency ? ' <span class="text-xs text-muted">(account: ' + UI.escapeHtml(t.currency) + ')</span>' : '') + '</div></div>' +
         '<div class="detail-item"><div class="k">Sender</div><div class="v">' + UI.escapeHtml(t.sender || '—') + '</div></div>' +
         '<div class="detail-item"><div class="k">Recipient</div><div class="v">' + UI.escapeHtml(t.recipient || '—') + '</div></div>' +
         '<div class="detail-item span-2"><div class="k">Description</div><div class="v">' + UI.escapeHtml(t.description || '—') + '</div></div>' +

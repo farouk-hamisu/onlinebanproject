@@ -47,17 +47,27 @@
   // ---------------- Rendering ----------------
   function totalBalance() {
     let t = 0;
+    const targetCur = UI.displayCurrency.code;
     state.accounts.forEach(function (a) {
       const b = state.balances[a.id];
-      if (b) t += Number(b.ledger_balance);
+      if (b) {
+        const raw = Number(b.ledger_balance) || 0;
+        const conv = UI.displayCurrency.convert(raw, a.currency || 'USD', targetCur);
+        t += (conv !== null ? conv : raw);
+      }
     });
     return t;
   }
   function availableBalance() {
     let t = 0;
+    const targetCur = UI.displayCurrency.code;
     state.accounts.forEach(function (a) {
       const b = state.balances[a.id];
-      if (b) t += Number(b.available_balance);
+      if (b) {
+        const raw = Number(b.available_balance) || 0;
+        const conv = UI.displayCurrency.convert(raw, a.currency || 'USD', targetCur);
+        t += (conv !== null ? conv : raw);
+      }
     });
     return t;
   }
@@ -78,11 +88,15 @@
 
   function renderBalances() {
     const el = document.getElementById('balance-cards');
-    const first = state.accounts[0];
-    const cur = first ? first.currency : 'USD';
+    const targetCur = UI.displayCurrency.code;
     const primary = state.cards[0];
     const savings = state.accounts.filter(function (a) { return a.account_type === 'savings'; })
-      .reduce(function (s, a) { return s + Number(state.balances[a.id] ? state.balances[a.id].ledger_balance : 0); }, 0);
+      .reduce(function (s, a) {
+        const b = state.balances[a.id];
+        const raw = Number(b ? b.ledger_balance : 0) || 0;
+        const conv = UI.displayCurrency.convert(raw, a.currency || 'USD', targetCur);
+        return s + (conv !== null ? conv : raw);
+      }, 0);
     const savingsCount = state.accounts.filter(function (a) { return a.account_type === 'savings'; }).length;
     const holder = primary ? primary.card_holder : (profile.full_name || 'Card Holder');
 
@@ -92,12 +106,12 @@
           UI.renderCardFace(primary, { holder: holder }) +
           '<div class="bc-bottom">' +
             '<div class="bc-label">Total Balance</div>' +
-            '<div class="bc-amount">' + UI.money(totalBalance(), cur) + '</div>' +
+            '<div class="bc-amount">' + UI.money(totalBalance(), targetCur) + '</div>' +
             '<div class="bc-sub">Across ' + state.accounts.length + ' account(s)</div>' +
           '</div>' +
         '</div>' +
-        '<div class="balance-card"><div class="bc-label">Available Balance</div><div class="bc-amount">' + UI.money(availableBalance(), cur) + '</div><div class="bc-sub">Ready to spend</div></div>' +
-        '<div class="balance-card"><div class="bc-label">Total Savings</div><div class="bc-amount">' + UI.money(savings, cur) + '</div><div class="bc-sub">' + savingsCount + ' savings account(s)</div></div>' +
+        '<div class="balance-card"><div class="bc-label">Available Balance</div><div class="bc-amount">' + UI.money(availableBalance(), targetCur) + '</div><div class="bc-sub">Ready to spend</div></div>' +
+        '<div class="balance-card"><div class="bc-label">Total Savings</div><div class="bc-amount">' + UI.money(savings, targetCur) + '</div><div class="bc-sub">' + savingsCount + ' savings account(s)</div></div>' +
       '</div>';
   }
 
@@ -181,7 +195,7 @@
     const c = state.cards[0];
     el.innerHTML =
       UI.renderCardFace(c) +
-      '<div class="flex-between mt-2"><span class="badge ' + (c.status === 'active' ? 'badge-success' : c.status === 'frozen' ? 'badge-frozen' : 'badge-failed') + '">' + UI.escapeHtml(c.status) + '</span><span class="text-sm text-muted">Limit ' + UI.money(c.spending_limit, 'USD') + '</span></div>' +
+      '<div class="flex-between mt-2"><span class="badge ' + (c.status === 'active' ? 'badge-success' : c.status === 'frozen' ? 'badge-frozen' : 'badge-failed') + '">' + UI.escapeHtml(c.status) + '</span><span class="text-sm text-muted">Limit ' + UI.money(c.spending_limit, c.currency || 'USD') + '</span></div>' +
       '<div class="card-actions mt-2"><a href="cards.html" class="btn btn-outline btn-sm w-100">Manage Card</a></div>';
   }
 

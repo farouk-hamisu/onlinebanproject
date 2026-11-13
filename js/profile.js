@@ -15,6 +15,10 @@
     document.getElementById('p-city').value = profile.city || '';
     document.getElementById('p-country').value = profile.country || '';
     document.getElementById('p-since').textContent = UI.formatDate(profile.created_at);
+    const curCode = profile.display_currency || 'USD';
+    const curSym = (UI.displayCurrency && UI.displayCurrency.symbols && UI.displayCurrency.symbols[curCode]) || '$';
+    const curEl = document.getElementById('p-currency');
+    if (curEl) curEl.textContent = curCode + ' (' + curSym + ')';
     document.getElementById('p-kyc').innerHTML = UI.badge(profile.kyc_status || 'pending');
     renderPfp();
   }

@@ -1,6 +1,6 @@
-// NationalRegionB — Unified Withdraw Funds module
+// NationalRegionB — Unified Transfer module
 (async function () {
-  await AppShell.init({ title: 'Withdraw Funds' });
+  await AppShell.init({ title: 'Transfer' });
   const user = Auth.user;
 
   const METHODS = [
@@ -20,14 +20,14 @@
       ]
     },
     {
-      id: 'paypal', name: 'PayPal', desc: 'Withdraw to a PayPal email address.',
+      id: 'paypal', name: 'PayPal', desc: 'Transfer to a PayPal email address.',
       labelFrom: 'email',
       fields: [
         { k: 'email', label: 'PayPal email', type: 'email', ph: 'name@example.com' }
       ]
     },
     {
-      id: 'cashapp', name: 'Cash App', desc: 'Withdraw to a $Cashtag.',
+      id: 'cashapp', name: 'Cash App', desc: 'Transfer to a $Cashtag.',
       labelFrom: 'cashtag',
       fields: [
         { k: 'cashtag', label: 'Cash App $Cashtag', ph: '$yourcashtag' }
@@ -45,7 +45,7 @@
       ]
     },
     {
-      id: 'wise', name: 'Wise', desc: 'Withdraw to a Wise recipient.',
+      id: 'wise', name: 'Wise', desc: 'Transfer to a Wise recipient.',
       labelFrom: 'recipient_name',
       fields: [
         { k: 'recipient_name', label: 'Recipient name', ph: 'Full name' },
@@ -53,7 +53,7 @@
       ]
     },
     {
-      id: 'payoneer', name: 'Payoneer', desc: 'Withdraw to a Payoneer recipient.',
+      id: 'payoneer', name: 'Payoneer', desc: 'Transfer to a Payoneer recipient.',
       labelFrom: 'recipient_name',
       fields: [
         { k: 'recipient_name', label: 'Recipient name', ph: 'Full name' },
@@ -61,7 +61,7 @@
       ]
     },
     {
-      id: 'skrill', name: 'Skrill', desc: 'Withdraw to a Skrill recipient.',
+      id: 'skrill', name: 'Skrill', desc: 'Transfer to a Skrill recipient.',
       labelFrom: 'recipient_name',
       fields: [
         { k: 'recipient_name', label: 'Recipient name', ph: 'Full name' },
@@ -191,7 +191,7 @@
       btn.addEventListener('click', function () {
         const id = btn.getAttribute('data-method');
         if (!methodEnabled(id)) {
-          UI.toast('This withdrawal method is currently unavailable.', 'warning');
+          UI.toast('This transfer method is currently unavailable.', 'warning');
           return;
         }
         selectMethod(id);
@@ -227,7 +227,7 @@
     document.getElementById('wd-fields').innerHTML =
       '<div class="field"><label>From account</label><select class="select" id="wd-account">' + accOpts + '</select></div>' +
       '<div class="field"><label>Available balance</label><div class="input" id="wd-balance-box" disabled>—</div></div>' +
-      '<div class="field"><label>Amount to withdraw</label>' +
+      '<div class="field"><label>Amount to transfer</label>' +
         '<div class="amount-field"><input type="number" class="input" id="wd-amount" min="0.01" step="any" placeholder="0.00">' +
         '<span class="currency-tag" id="wd-cur-tag">' + UI.escapeHtml(cur) + '</span></div>' +
       '</div>' +
@@ -321,7 +321,7 @@
     const err = document.getElementById('wd-error');
     err.textContent = '';
     const acc = currentAccount();
-    if (!acc) return fail('Select an account to withdraw from.');
+    if (!acc) return fail('Select an account to transfer from.');
     const amount = Number(document.getElementById('wd-amount').value);
     if (!amount || amount <= 0) return fail('Enter a valid amount.');
     const min = Number(state.config.min) || 0;
@@ -373,7 +373,7 @@
   function friendlySubmitError(e) {
     const raw = (e && e.message ? e.message : String(e || '')).split('\n')[0].trim();
     if (raw.indexOf('does not exist') !== -1) {
-      return 'Withdrawals are temporarily unavailable. Please try again later or contact support.';
+      return 'Transfers are temporarily unavailable. Please try again later or contact support.';
     }
     if (raw.indexOf('MISSING_FIELD:') === 0) {
       return 'Please fill in all required fields.';
@@ -418,7 +418,7 @@
       otpBlock +
       '<div class="form-error" id="rv-error" style="margin-top:10px"></div>',
       {
-        title: 'Review withdrawal',
+        title: 'Review Transfer',
         footer: '<button class="btn btn-outline" data-cancel>Cancel</button><button class="btn btn-primary" data-submit>Confirm &amp; Submit</button>'
       }
     );
@@ -450,8 +450,8 @@
       let pin;
       try {
         pin = await UI.promptPin({
-          title: 'Confirm Withdrawal',
-          message: 'Enter your 4-digit security PIN to authorize a withdrawal of ' + UI.money(v.amount, cur) + ' via ' + state.method.name + ' to ' + v.label + '.'
+          title: 'Confirm Transfer',
+          message: 'Enter your 4-digit security PIN to authorize a transfer of ' + UI.money(v.amount, cur) + ' via ' + state.method.name + ' to ' + v.label + '.'
         });
       } catch (e) {
         if (e && e.message !== 'CANCELLED') errEl.textContent = UI.apiErrorMessage(e);
@@ -487,7 +487,7 @@
           const otpEl = modal.body.querySelector('#rv-otp');
           if (otpEl) { otpEl.value = ''; otpEl.focus(); }
         } else {
-          errEl.textContent = 'The withdrawal could not be submitted. Please try again.';
+          errEl.textContent = 'The transfer could not be submitted. Please try again.';
         }
       } catch (e) {
         state.submitting = false;
@@ -503,8 +503,8 @@
     const modal = UI.openModal(
       '<div class="text-center">' +
         '<div class="xflow-icon is-success" style="margin:0 auto">✓</div>' +
-        '<h3 style="margin:10px 0 6px">Withdrawal submitted</h3>' +
-        '<p class="text-muted" style="margin:0 0 12px">Your withdrawal has been received and is pending review by our team. You can track it below.</p>' +
+        '<h3 style="margin:10px 0 6px">Transfer submitted</h3>' +
+        '<p class="text-muted" style="margin:0 0 12px">Your transfer has been received and is pending review by our team. You can track it below.</p>' +
         '<div style="margin-bottom:12px">' + UI.badge(res.status || 'pending') + '</div>' +
         '<div class="detail-grid" style="text-align:left">' +
           '<div class="detail-item"><div class="k">Reference</div><div class="v">' + UI.escapeHtml(res.reference || '—') + '</div></div>' +
@@ -513,7 +513,7 @@
         '</div>' +
       '</div>',
       {
-        title: 'Withdrawal submitted',
+        title: 'Transfer submitted',
         footer: '<button class="btn btn-outline" data-history>View history</button><button class="btn btn-primary" data-done>Done</button>'
       }
     );
@@ -528,7 +528,7 @@
       document.getElementById('wd-history').scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
     loadHistory();
-    UI.toast('Withdrawal ' + (res.reference || '') + ' submitted for review.', 'success');
+    UI.toast('Transfer ' + (res.reference || '') + ' submitted for review.', 'success');
   }
 
   function resetForm() {
@@ -550,14 +550,14 @@
     } catch (e) {
       // History is best-effort: pre-migration (table missing) or transient
       // read failures degrade to a silent empty state.
-      el.innerHTML = UI.emptyState('No withdrawals yet');
+      el.innerHTML = UI.emptyState('No transfers yet');
     }
   }
 
   function renderHistory(rows) {
     const el = document.getElementById('wd-history');
     if (!rows.length) {
-      el.innerHTML = UI.emptyState('No withdrawals yet');
+      el.innerHTML = UI.emptyState('No transfers yet');
       return;
     }
     el.innerHTML = '<div class="table-wrap"><table class="table mobile-cards">' +
@@ -574,7 +574,7 @@
           '<td data-label="Status">' + UI.badge(w.status) + '</td>' +
           '<td data-label="Date">' + UI.formatDateTime(w.created_at) + '</td>' +
           '<td data-label="Actions">' + (canCancel
-            ? '<button class="row-action" data-cancel-wd="' + w.id + '" title="Cancel withdrawal">' + ICONS.close + '</button>'
+            ? '<button class="row-action" data-cancel-wd="' + w.id + '" title="Cancel transfer">' + ICONS.close + '</button>'
             : '') + '</td>' +
         '</tr>';
       }).join('') +
@@ -585,11 +585,11 @@
         const row = rows.find(function (x) { return x.id === btn.getAttribute('data-cancel-wd'); });
         if (!row) return;
         UI.confirmDialog(
-          'Cancel withdrawal ' + row.reference + '? ' + UI.money(row.amount + (Number(row.fee) || 0), row.currency) + ' will be returned to your account.',
+          'Cancel transfer ' + row.reference + '? ' + UI.money(row.amount + (Number(row.fee) || 0), row.currency) + ' will be returned to your account.',
           async function () {
             try {
               await UI.rpc('customer_cancel_withdrawal', { p_user_id: user.id, p_withdrawal_id: row.id });
-              UI.toast('Withdrawal ' + row.reference + ' cancelled. Funds were returned to your account.', 'success');
+              UI.toast('Transfer ' + row.reference + ' cancelled. Funds were returned to your account.', 'success');
               loadHistory();
             } catch (e) {
               UI.toast(friendlySubmitError(e), 'error');

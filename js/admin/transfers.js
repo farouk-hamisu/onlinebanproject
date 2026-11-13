@@ -79,7 +79,7 @@
         const fields = viewFields(t).map(function (f) {
           return '<div class="detail-item"><div class="k">' + f[0] + '</div><div class="v">' + f[1] + '</div></div>';
         }).join('');
-        UI.openModal('<div class="detail-grid">' + fields + '</div>', { title: isWd() ? 'Withdrawal Details' : 'Transfer Details' });
+        UI.openModal('<div class="detail-grid">' + fields + '</div>', { title: 'Transfer Details' });
       });
     });
     el.querySelectorAll('[data-status]').forEach(function (b) {

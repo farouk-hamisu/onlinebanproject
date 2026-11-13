@@ -9,7 +9,13 @@
   let total = 0;
 
   // Enabled platform currencies, for the display-currency selector
-  let CURRENCIES = [{ code: 'USD', name: 'US Dollar', symbol: '$' }];
+  let CURRENCIES = [
+    { code: 'USD', name: 'US Dollar', symbol: '$' },
+    { code: 'EUR', name: 'Euro', symbol: '€' },
+    { code: 'GBP', name: 'British Pound', symbol: '£' },
+    { code: 'NGN', name: 'Nigerian Naira', symbol: '₦' },
+    { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' }
+  ];
   try {
     const { data, error } = await SB.from('currencies').select('code, name, symbol').eq('enabled', true).order('code');
     if (!error && data && data.length) CURRENCIES = data;
@@ -18,7 +24,7 @@
   function currencyOptions(selected) {
     const cur = String(selected || 'USD').toUpperCase();
     return CURRENCIES.map(function (c) {
-      return '<option value="' + c.code + '"' + (c.code === cur ? ' selected' : '') + '>' + c.code + ' — ' + UI.escapeHtml(c.name || c.code) + '</option>';
+      return '<option value="' + c.code + '"' + (c.code === cur ? ' selected' : '') + '>' + c.code + ' — ' + UI.escapeHtml(c.name || c.code) + ' (' + (c.symbol || '') + ')</option>';
     }).join('');
   }
 
@@ -44,12 +50,15 @@
     const el = document.getElementById('users-table');
     if (!rows.length) { el.innerHTML = UI.emptyState('No users found'); return; }
     el.innerHTML = '<table class="table mobile-cards">' +
-      '<thead><tr><th>Customer</th><th>Status</th><th>KYC</th><th>Accounts</th><th>Total balance</th><th>Joined</th><th>Actions</th></tr></thead><tbody>' +
+      '<thead><tr><th>Customer</th><th>Status</th><th>KYC</th><th>Currency</th><th>Accounts</th><th>Total balance</th><th>Joined</th><th>Actions</th></tr></thead><tbody>' +
       rows.map(function (u) {
+        const cur = (u.display_currency || 'USD').toUpperCase();
+        const curObj = CURRENCIES.find(function (c) { return c.code === cur; }) || { symbol: '$' };
         return '<tr data-id="' + u.id + '" class="row-link">' +
           '<td data-label="Customer"><div class="flex gap-1">' + UI.avatar(u) + '<div><div class="cell-main">' + UI.escapeHtml(u.full_name || '—') + '</div><div class="cell-sub">' + UI.escapeHtml(u.email) + '</div></div></div></td>' +
           '<td data-label="Status">' + UI.badge(u.status) + '</td>' +
           '<td data-label="KYC">' + UI.badge(u.kyc_status) + '</td>' +
+          '<td data-label="Currency"><button class="btn btn-outline btn-xs" data-quick-cur="' + u.id + '" title="Click to change preferred currency">' + cur + ' (' + curObj.symbol + ')</button></td>' +
           '<td data-label="Accounts">' + u.account_count + '</td>' +
           '<td data-label="Total balance">' + UI.money(u.total_balance, 'USD') + '</td>' +
           '<td data-label="Joined">' + UI.formatDate(u.created_at) + '</td>' +
@@ -74,6 +83,13 @@
       b.addEventListener('click', function (e) {
         e.stopPropagation();
         window.location.href = 'customer.html?id=' + b.getAttribute('data-view');
+      });
+    });
+    el.querySelectorAll('[data-quick-cur]').forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const u = rows.find(function (x) { return x.id === b.getAttribute('data-quick-cur'); });
+        if (u) changeCurrencyDialog(u);
       });
     });
     el.querySelectorAll('[data-edit]').forEach(function (b) {
@@ -135,6 +151,39 @@
     el.innerHTML = html;
     el.querySelectorAll('button[data-p]').forEach(function (b) {
       b.addEventListener('click', function () { page = Number(b.getAttribute('data-p')); load(); });
+    });
+  }
+
+  function changeCurrencyDialog(u) {
+    const cur = (u.display_currency || 'USD').toUpperCase();
+    const modal = UI.openModal(
+      '<div style="margin-bottom:12px">' +
+        '<div style="font-weight:600;font-size:15px;color:var(--text)">' + UI.escapeHtml(u.full_name || 'Customer') + '</div>' +
+        '<div class="text-sm text-muted">' + UI.escapeHtml(u.email) + '</div>' +
+      '</div>' +
+      '<div class="field"><label>Preferred display currency</label><select class="select" id="quick-cur-select">' + currencyOptions(cur) + '</select>' +
+      '<div class="hint" style="margin-top:6px;font-size:12px;color:var(--text-muted)">All account balances, transaction records, deposits, and transfers will be converted and displayed in this currency for this user.</div></div>' +
+      '<div class="form-error" id="quick-cur-error"></div>',
+      { title: 'Change Display Currency', footer: '<button class="btn btn-outline" data-cancel>Cancel</button><button class="btn btn-primary" data-save>Save Currency</button>' }
+    );
+    modal.footer.querySelector('[data-cancel]').addEventListener('click', modal.close);
+    modal.footer.querySelector('[data-save]').addEventListener('click', async function () {
+      const err = document.getElementById('quick-cur-error');
+      err.textContent = '';
+      const btn = this;
+      const newCur = document.getElementById('quick-cur-select').value;
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      try {
+        await adminApi('admin_set_user_currency', { p_user_id: u.id, p_currency: newCur });
+        UI.toast('Display currency for ' + (u.full_name || u.email) + ' set to ' + newCur + '.', 'success');
+        modal.close();
+        load();
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Save Currency';
+        err.textContent = UI.apiErrorMessage(e);
+      }
     });
   }
 

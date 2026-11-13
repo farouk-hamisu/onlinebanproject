@@ -11,7 +11,13 @@
   let activeTab = 'profile';
 
   // Enabled platform currencies, for the display-currency selector
-  let CURRENCIES = [{ code: 'USD', name: 'US Dollar', symbol: '$' }];
+  let CURRENCIES = [
+    { code: 'USD', name: 'US Dollar', symbol: '$' },
+    { code: 'EUR', name: 'Euro', symbol: '€' },
+    { code: 'GBP', name: 'British Pound', symbol: '£' },
+    { code: 'NGN', name: 'Nigerian Naira', symbol: '₦' },
+    { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' }
+  ];
   try {
     const { data: curRows, error } = await SB.from('currencies').select('code, name, symbol').eq('enabled', true).order('code');
     if (!error && curRows && curRows.length) CURRENCIES = curRows;
@@ -82,7 +88,7 @@
   function currencyModal() {
     const cur = ((data.profile && data.profile.display_currency) || 'USD').toUpperCase();
     const options = CURRENCIES.map(function (c) {
-      return '<option value="' + c.code + '"' + (c.code === cur ? ' selected' : '') + '>' + c.code + ' — ' + UI.escapeHtml(c.name || c.code) + '</option>';
+      return '<option value="' + c.code + '"' + (c.code === cur ? ' selected' : '') + '>' + c.code + ' — ' + UI.escapeHtml(c.name || c.code) + ' (' + (c.symbol || '') + ')' + (c.code === 'USD' ? ' [Platform Default]' : '') + '</option>';
     }).join('');
     const modal = UI.openModal(
       '<div class="field"><label>Preferred currency</label><select class="select" id="dc-currency">' + options + '</select>' +

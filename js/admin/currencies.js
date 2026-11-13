@@ -1,10 +1,272 @@
-// NationalRegionB — Admin currencies & exchange rates module
+// NationalRegionB — Admin currencies & user currency management module
 (async function () {
   const admin = await AdminAuth.requireAuth();
   if (!admin) return;
   renderAdminShell('Currencies');
 
+  const MAJOR_CURRENCIES = [
+    { code: 'USD', name: 'US Dollar', symbol: '$', label: 'USD — US Dollar ($)' },
+    { code: 'EUR', name: 'Euro', symbol: '€', label: 'EUR — Euro (€)' },
+    { code: 'GBP', name: 'British Pound', symbol: '£', label: 'GBP — British Pound (£)' },
+    { code: 'NGN', name: 'Nigerian Naira', symbol: '₦', label: 'NGN — Nigerian Naira (₦)' },
+    { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', label: 'CAD — Canadian Dollar (C$)' }
+  ];
+
+  const CURRENCY_SYMBOLS = {
+    USD: '$', EUR: '€', GBP: '£', NGN: '₦', CAD: 'C$'
+  };
+
+  let allUsers = [];
+  let userPage = 1;
+  const USER_PAGE_SIZE = 10;
+  let userSearchTerm = '';
+  let userFilterCurrency = '';
+
+  // ---------------------------------------------------------------------------
+  // Load Everything
+  // ---------------------------------------------------------------------------
   async function load() {
+    await Promise.all([
+      loadPlatformCurrencies(),
+      loadUserCurrencies()
+    ]);
+  }
+
+  // ---------------------------------------------------------------------------
+  // 1. User Currency Management
+  // ---------------------------------------------------------------------------
+  async function loadUserCurrencies() {
+    const el = document.getElementById('user-currencies-table');
+    el.innerHTML = '<div class="loading-block"><div class="spinner"></div><span>Loading user currencies...</span></div>';
+    try {
+      const res = await adminApi('admin_list_users', {
+        p_search: '',
+        p_status: null,
+        p_limit: 500,
+        p_offset: 0
+      });
+      allUsers = res.rows || [];
+      populateUserDropdown();
+      renderUserCurrencies();
+    } catch (e) {
+      el.innerHTML = UI.emptyState('Could not load user currencies');
+      UI.toast(UI.apiErrorMessage(e), 'error');
+    }
+  }
+
+  function populateUserDropdown() {
+    const sel = document.getElementById('uc-user-select');
+    if (!sel) return;
+    const currentVal = sel.value;
+    const opts = ['<option value="">Choose a customer...</option>'].concat(
+      allUsers.map(function (u) {
+        const cur = (u.display_currency || 'USD').toUpperCase();
+        const sym = CURRENCY_SYMBOLS[cur] || '$';
+        const name = UI.escapeHtml(u.full_name || 'Customer');
+        const email = UI.escapeHtml(u.email || '');
+        return '<option value="' + u.id + '">' + name + ' (' + email + ') — Current: ' + cur + ' (' + sym + ')</option>';
+      })
+    );
+    sel.innerHTML = opts.join('');
+    if (currentVal && allUsers.some(function (u) { return u.id === currentVal; })) {
+      sel.value = currentVal;
+    }
+  }
+
+  function filteredUsers() {
+    let list = allUsers.slice();
+    if (userSearchTerm) {
+      const term = userSearchTerm.toLowerCase();
+      list = list.filter(function (u) {
+        return (u.full_name && u.full_name.toLowerCase().indexOf(term) !== -1) ||
+               (u.email && u.email.toLowerCase().indexOf(term) !== -1);
+      });
+    }
+    if (userFilterCurrency) {
+      list = list.filter(function (u) {
+        const cur = (u.display_currency || 'USD').toUpperCase();
+        return cur === userFilterCurrency;
+      });
+    }
+    return list;
+  }
+
+  function renderUserCurrencies() {
+    const el = document.getElementById('user-currencies-table');
+    const list = filteredUsers();
+    const total = list.length;
+    const totalPages = Math.max(1, Math.ceil(total / USER_PAGE_SIZE));
+    if (userPage > totalPages) userPage = totalPages;
+
+    const start = (userPage - 1) * USER_PAGE_SIZE;
+    const paged = list.slice(start, start + USER_PAGE_SIZE);
+
+    if (!paged.length) {
+      el.innerHTML = UI.emptyState('No users found matching filter');
+      renderUserPagination(0);
+      return;
+    }
+
+    el.innerHTML = '<table class="table mobile-cards">' +
+      '<thead><tr><th>Customer</th><th>Assigned Currency</th><th>Accounts</th><th>Total Balance</th><th>Joined</th><th>Actions</th></tr></thead><tbody>' +
+      paged.map(function (u) {
+        const cur = (u.display_currency || 'USD').toUpperCase();
+        const sym = CURRENCY_SYMBOLS[cur] || '$';
+        const isDefault = !u.display_currency || u.display_currency === 'USD';
+        const badgeCls = cur === 'USD' ? 'badge-info' : cur === 'EUR' ? 'badge-primary' : cur === 'GBP' ? 'badge-purple' : cur === 'NGN' ? 'badge-gold' : 'badge-cyan';
+        return '<tr data-uid="' + u.id + '">' +
+          '<td data-label="Customer"><div class="flex gap-1">' + UI.avatar(u) +
+            '<div><div class="cell-main">' + UI.escapeHtml(u.full_name || '—') + '</div>' +
+            '<div class="cell-sub">' + UI.escapeHtml(u.email) + '</div></div></div></td>' +
+          '<td data-label="Assigned Currency">' +
+            '<span class="badge ' + badgeCls + '" style="font-weight:700;font-size:12px">' + cur + ' (' + sym + ')</span>' +
+            (isDefault ? '<div class="cell-sub">Platform Default</div>' : '<div class="cell-sub" style="color:var(--success)">Custom assigned</div>') +
+          '</td>' +
+          '<td data-label="Accounts">' + (u.account_count || 0) + '</td>' +
+          '<td data-label="Total Balance">' + UI.money(u.total_balance || 0, cur) + '</td>' +
+          '<td data-label="Joined">' + UI.formatDate(u.created_at) + '</td>' +
+          '<td data-label="Actions"><div class="row-actions">' +
+            '<button class="btn btn-outline btn-xs" data-change-uc="' + u.id + '">Change Currency</button>' +
+          '</div></td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table>';
+
+    el.querySelectorAll('[data-change-uc]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const uid = btn.getAttribute('data-change-uc');
+        const userObj = allUsers.find(function (x) { return x.id === uid; });
+        if (userObj) openChangeUserCurrencyModal(userObj);
+      });
+    });
+
+    renderUserPagination(total);
+  }
+
+  function renderUserPagination(total) {
+    const pages = Math.max(1, Math.ceil(total / USER_PAGE_SIZE));
+    const el = document.getElementById('uc-pagination');
+    if (!el) return;
+    if (pages <= 1) { el.innerHTML = ''; return; }
+    let html = '<button data-p="' + (userPage - 1) + '" ' + (userPage <= 1 ? 'disabled' : '') + '>‹</button>';
+    for (let i = 1; i <= pages; i++) {
+      html += '<button data-p="' + i + '" class="' + (i === userPage ? 'active' : '') + '">' + i + '</button>';
+    }
+    html += '<button data-p="' + (userPage + 1) + '" ' + (userPage >= pages ? 'disabled' : '') + '>›</button>';
+    el.innerHTML = html;
+    el.querySelectorAll('button[data-p]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        userPage = Number(b.getAttribute('data-p'));
+        renderUserCurrencies();
+      });
+    });
+  }
+
+  function openChangeUserCurrencyModal(u) {
+    const currentCur = (u.display_currency || 'USD').toUpperCase();
+    const optionsHtml = MAJOR_CURRENCIES.map(function (c) {
+      return '<option value="' + c.code + '"' + (c.code === currentCur ? ' selected' : '') + '>' +
+        c.label + (c.code === 'USD' ? ' [Platform Default]' : '') +
+      '</option>';
+    }).join('');
+
+    const modal = UI.openModal(
+      '<div style="margin-bottom:12px">' +
+        '<div style="font-weight:600;font-size:15px;color:var(--text)">' + UI.escapeHtml(u.full_name || 'Customer') + '</div>' +
+        '<div class="text-sm text-muted">' + UI.escapeHtml(u.email) + '</div>' +
+      '</div>' +
+      '<div class="field">' +
+        '<label>Preferred Display Currency</label>' +
+        '<select class="select" id="modal-uc-select">' + optionsHtml + '</select>' +
+        '<div class="hint" style="margin-top:6px;font-size:12px;color:var(--text-muted)">' +
+          'All account balances, transaction records, deposits, and transfers will be calculated and displayed in this currency exclusively for this user.' +
+        '</div>' +
+      '</div>' +
+      '<div class="form-error" id="modal-uc-error"></div>',
+      {
+        title: 'Assign User Currency',
+        footer: '<button class="btn btn-outline" data-cancel>Cancel</button><button class="btn btn-primary" data-save>Save Currency</button>'
+      }
+    );
+
+    modal.footer.querySelector('[data-cancel]').addEventListener('click', modal.close);
+    modal.footer.querySelector('[data-save]').addEventListener('click', async function () {
+      const err = document.getElementById('modal-uc-error');
+      err.textContent = '';
+      const btn = this;
+      const newCur = document.getElementById('modal-uc-select').value;
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      try {
+        await adminApi('admin_set_user_currency', {
+          p_user_id: u.id,
+          p_currency: newCur
+        });
+        u.display_currency = newCur;
+        UI.toast('Display currency for ' + (u.full_name || u.email) + ' set to ' + newCur + '.', 'success');
+        modal.close();
+        populateUserDropdown();
+        renderUserCurrencies();
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Save Currency';
+        err.textContent = UI.apiErrorMessage(e);
+      }
+    });
+  }
+
+  // Quick Assign Button Listener
+  document.getElementById('btn-assign-currency').addEventListener('click', async function () {
+    const userSelect = document.getElementById('uc-user-select');
+    const currencySelect = document.getElementById('uc-currency-select');
+    const userId = userSelect.value;
+    const currency = currencySelect.value;
+
+    if (!userId) {
+      UI.toast('Please select a customer to assign a currency.', 'warning');
+      userSelect.focus();
+      return;
+    }
+
+    const userObj = allUsers.find(function (x) { return x.id === userId; });
+    const btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Assigning...';
+
+    try {
+      await adminApi('admin_set_user_currency', {
+        p_user_id: userId,
+        p_currency: currency
+      });
+      if (userObj) userObj.display_currency = currency;
+      UI.toast('Display currency for ' + (userObj ? (userObj.full_name || userObj.email) : 'user') + ' updated to ' + currency + '.', 'success');
+      populateUserDropdown();
+      renderUserCurrencies();
+    } catch (e) {
+      UI.toast(UI.apiErrorMessage(e), 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Assign Currency';
+    }
+  });
+
+  // User search & filter listeners
+  document.getElementById('uc-search').addEventListener('input', function () {
+    userSearchTerm = this.value.trim();
+    userPage = 1;
+    renderUserCurrencies();
+  });
+
+  document.getElementById('uc-filter-currency').addEventListener('change', function () {
+    userFilterCurrency = this.value;
+    userPage = 1;
+    renderUserCurrencies();
+  });
+
+  // ---------------------------------------------------------------------------
+  // 2. Platform Currencies & Exchange Rates
+  // ---------------------------------------------------------------------------
+  async function loadPlatformCurrencies() {
     try {
       const data = await adminApi('admin_list_currencies');
       renderCurrencies(data);
@@ -54,7 +316,7 @@
             });
             UI.toast('Currency updated.', 'success');
             modal.close();
-            load();
+            loadPlatformCurrencies();
           } catch (e) { document.getElementById('e-error').textContent = UI.apiErrorMessage(e); }
         });
       });
@@ -66,7 +328,7 @@
           try {
             await adminApi('admin_delete_currency', { p_code: code });
             UI.toast('Currency deleted.', 'success');
-            load();
+            loadPlatformCurrencies();
           } catch (e) { UI.toast(UI.apiErrorMessage(e), 'error'); }
         }, 'Delete');
       });
@@ -111,7 +373,7 @@
             });
             UI.toast('Exchange rate updated.', 'success');
             modal.close();
-            load();
+            loadPlatformCurrencies();
           } catch (e) { document.getElementById('r-error').textContent = UI.apiErrorMessage(e); }
         });
       });
@@ -140,7 +402,7 @@
         });
         UI.toast('Currency added.', 'success');
         modal.close();
-        load();
+        loadPlatformCurrencies();
       } catch (e) { err.textContent = UI.apiErrorMessage(e); }
     });
   });

@@ -29,7 +29,7 @@ A full-featured online banking platform built with **vanilla HTML, CSS, and Java
 ├── css/                       Design system + all component styles
 ├── assets/logos/              Logo + favicon
 └── supabase/
-    ├── migrations/            001–026 (schema, RLS, functions, triggers, verification, admin grant, portal password sync, transaction editing, mock transaction history, per-user display currency, signup/login auth fix, OTP purchase + transfer-OTP toggle, OTP txid-submit fix, MoonPay signed checkout URL, MoonPay simplified to plain website link)
+    ├── migrations/            001–028 (schema, RLS, functions, triggers, verification, admin grant, portal password sync, transaction editing, mock transaction history, per-user display currency, signup/login auth fix, OTP purchase + transfer-OTP toggle, OTP txid-submit fix, MoonPay checkout, unified transfers, user currency management & transfer updates)
     └── seed.sql               Demo data (development only)
 ```
 

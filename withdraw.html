@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Withdraw Funds — NationalRegionB</title>
+  <title>Transfer — NationalRegionB</title>
   <link rel="icon" type="image/svg+xml" href="assets/logos/favicon.svg">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/forms.css">
@@ -23,14 +23,14 @@
   </div>
   <div id="page-root">
     <div class="card mb-3 hide" id="wd-config-banner" style="border:1px solid var(--warning);background:var(--warning-soft);color:var(--warning);padding:12px 16px;border-radius:12px;font-size:14px">
-      Withdrawal settings could not be loaded — showing defaults. Submissions may be unavailable until this resolves.
+      Transfer settings could not be loaded — showing defaults. Submissions may be unavailable until this resolves.
     </div>
 
     <div class="card mb-3">
       <div class="card-header">
         <div>
-          <h3 class="card-title">Withdraw Funds</h3>
-          <div class="card-subtitle">Choose where you would like to receive your money. Withdrawals are reviewed by our team before release.</div>
+          <h3 class="card-title">Transfer</h3>
+          <div class="card-subtitle">Choose where you would like to send your money. Transfers are reviewed by our team before release.</div>
         </div>
       </div>
       <div class="method-grid" id="method-grid">
@@ -41,7 +41,7 @@
     <div class="card mb-3 hide" id="wd-form-card">
       <div class="flex-between mb-2" style="flex-wrap:wrap;gap:8px">
         <div>
-          <h3 class="card-title mb-0" id="wd-form-title">Withdrawal details</h3>
+          <h3 class="card-title mb-0" id="wd-form-title">Transfer details</h3>
           <div class="card-subtitle" id="wd-form-sub"></div>
         </div>
         <button class="btn btn-outline btn-sm" id="wd-form-close" type="button">Change method</button>
@@ -51,21 +51,21 @@
         <div class="flex-between"><span class="text-muted">Transfer fee</span><strong id="wd-fee">—</strong></div>
         <div class="flex-between"><span class="text-muted">Limits</span><strong id="wd-limits">—</strong></div>
         <div class="flex-between"><span class="text-muted">Available balance</span><strong id="wd-balance">—</strong></div>
-        <div class="review-total"><span>Total debited</span><strong id="wd-total">$0.00</strong></div>
+        <div class="review-total"><span>Total debited</span><strong id="wd-total">—</strong></div>
       </div>
       <div class="form-error" id="wd-error"></div>
       <div class="flex-between mt-3" style="flex-wrap:wrap;gap:10px">
         <span class="text-muted text-sm" id="wd-otp-hint"></span>
-        <button class="btn btn-primary" id="wd-review" type="button">Review withdrawal</button>
+        <button class="btn btn-primary" id="wd-review" type="button">Review transfer</button>
       </div>
     </div>
 
     <div class="card mb-3">
       <div class="flex-between mb-2" style="flex-wrap:wrap;gap:8px">
-        <h3 class="card-title mb-0">Your withdrawals</h3>
+        <h3 class="card-title mb-0">Your transfers</h3>
         <button class="btn btn-outline btn-sm" id="wd-refresh" type="button">Refresh</button>
       </div>
-      <div id="wd-history"><div class="loading-block"><div class="spinner"></div><span>Loading withdrawals...</span></div></div>
+      <div id="wd-history"><div class="loading-block"><div class="spinner"></div><span>Loading transfers...</span></div></div>
     </div>
 
     <div class="card">

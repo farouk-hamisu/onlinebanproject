@@ -153,8 +153,9 @@
   }
 
   function editLimit(card) {
+    const cur = card.currency || UI.displayCurrency.code || 'USD';
     const modal = UI.openModal(
-      '<div class="field"><label>Spending limit (USD)</label><input type="number" class="input" id="limit-input" min="0" value="' + card.spending_limit + '"></div>' +
+      '<div class="field"><label>Spending limit (' + cur + ')</label><input type="number" class="input" id="limit-input" min="0" value="' + card.spending_limit + '"></div>' +
       '<div class="form-error" id="limit-error"></div>',
       { title: 'Update Spending Limit', footer: '<button class="btn btn-outline" data-cancel>Cancel</button><button class="btn btn-primary" data-save>Save</button>' }
     );
@@ -166,7 +167,7 @@
       try {
         const pin = await UI.promptPin({
           title: 'Update Spending Limit',
-          message: 'Enter your 4-digit security PIN to update this card\'s spending limit to ' + UI.money(val, 'USD') + '.'
+          message: 'Enter your 4-digit security PIN to update this card\'s spending limit to ' + UI.money(val, cur) + '.'
         });
         saveBtn.disabled = true;
         saveBtn.textContent = 'Saving...';
@@ -191,7 +192,7 @@
         '<div class="detail-item"><div class="k">Brand</div><div class="v">' + UI.escapeHtml(c.card_brand) + '</div></div>' +
         '<div class="detail-item"><div class="k">Expiry</div><div class="v">' + c.expiry_month + '/' + c.expiry_year + '</div></div>' +
         '<div class="detail-item"><div class="k">Status</div><div class="v">' + UI.badge(c.status) + '</div></div>' +
-        '<div class="detail-item"><div class="k">Spending limit</div><div class="v">' + UI.money(c.spending_limit, 'USD') + '</div></div>' +
+        '<div class="detail-item"><div class="k">Spending limit</div><div class="v">' + UI.money(c.spending_limit, c.currency || 'USD') + '</div></div>' +
         '<div class="detail-item"><div class="k">Issued</div><div class="v">' + UI.formatDate(c.created_at) + '</div></div>' +
       '</div>',
       { title: 'Card Details', footer: '<button class="btn btn-outline" data-cancel>Close</button>' }

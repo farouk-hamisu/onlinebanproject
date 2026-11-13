@@ -62,7 +62,7 @@
   function openApply(product) {
     const modal = UI.openModal(
       '<div class="field"><label>Loan amount</label>' +
-        '<div class="amount-field"><input type="number" class="input" id="la-amount" min="' + product.min_amount + '" max="' + product.max_amount + '" value="' + product.min_amount + '"><span class="currency-tag">$</span></div></div>' +
+        '<div class="amount-field"><input type="number" class="input" id="la-amount" min="' + product.min_amount + '" max="' + product.max_amount + '" value="' + product.min_amount + '"><span class="currency-tag">' + (UI.displayCurrency.symbols[UI.displayCurrency.code] || '$') + '</span></div></div>' +
       '<div class="field"><label>Term (months)</label><select class="select" id="la-term">' +
         [6, 12, 24, 36, 48, 60, 72, 84].filter(function (m) { return m <= product.term_months; }).map(function (m) { return '<option value="' + m + '">' + m + ' months</option>'; }).join('') +
       '</select></div>' +

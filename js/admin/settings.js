@@ -263,10 +263,10 @@
         networks: Array.isArray(prev.networks) ? prev.networks : []
       };
     });
-    UI.confirmDialog('Save withdrawal method settings? Customers will see these methods on the Withdraw Funds page immediately.', async function () {
+    UI.confirmDialog('Save transfer method settings? Customers will see these methods on the Transfer page immediately.', async function () {
       try {
         await adminApi('admin_update_setting', { p_key: 'withdrawal_methods', p_value: obj });
-        UI.toast('Withdrawal settings saved.', 'success');
+        UI.toast('Transfer settings saved.', 'success');
         loadSettings();
       } catch (e) {
         err.textContent = UI.apiErrorMessage(e);

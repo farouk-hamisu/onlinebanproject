@@ -401,14 +401,23 @@
   // Admin pages never initialize it, so the portal keeps showing native amounts.
   const DisplayCurrency = {
     code: 'USD',
-    symbols: Object.assign({}, APP_CONFIG.currencySymbols || { USD: '$' }),
-    rates: {},          // 'FROM->TO' -> number
-    supported: null,    // Set of enabled currency codes (null until loaded)
+    symbols: Object.assign({ USD: '$', EUR: '€', GBP: '£', NGN: '₦', CAD: 'C$' }, APP_CONFIG.currencySymbols || {}),
+    rates: {
+      'USD->EUR': 0.92, 'EUR->USD': 1.087,
+      'USD->GBP': 0.79, 'GBP->USD': 1.266,
+      'USD->NGN': 1580, 'NGN->USD': 0.00063,
+      'USD->CAD': 1.37, 'CAD->USD': 0.73
+    },          // 'FROM->TO' -> number
+    supported: new Set(['USD', 'EUR', 'GBP', 'NGN', 'CAD']),    // Default to the 5 major supported currencies
     _load: null,
 
     setCode(code) {
       const c = String(code || '').toUpperCase();
-      if (c && (!this.supported || this.supported.has(c))) this.code = c;
+      if (c && (!this.supported || this.supported.has(c))) {
+        this.code = c;
+      } else if (!c) {
+        this.code = 'USD';
+      }
     },
 
     load() {
@@ -416,16 +425,18 @@
       this._load = (async () => {
         try {
           const [curRes, rateRes] = await Promise.all([
-            SB.from('currencies').select('code, symbol').eq('enabled', true),
+            SB.from('currencies').select('code, symbol, is_base').eq('enabled', true),
             SB.from('exchange_rates').select('base_currency, quote_currency, rate')
           ]);
           if (!curRes.error && curRes.data && curRes.data.length) {
             this.supported = new Set();
+            let baseCode = 'USD';
             curRes.data.forEach((c) => {
               this.supported.add(c.code);
               if (c.symbol) this.symbols[c.code] = c.symbol;
+              if (c.is_base) baseCode = c.code;
             });
-            if (!this.supported.has(this.code)) this.code = 'USD';
+            if (!this.supported.has(this.code)) this.code = baseCode;
           }
           if (!rateRes.error && rateRes.data) {
             rateRes.data.forEach((r) => {
@@ -446,9 +457,20 @@
       if (from === to) return 1;
       const direct = this.rates[from + '->' + to];
       if (direct) return direct;
-      const a = this.rates[from + '->USD'];
-      const b = this.rates['USD->' + to];
-      return (a && b) ? a * b : null;
+      if (to === 'USD') {
+        if (this.rates[from + '->USD']) return this.rates[from + '->USD'];
+        if (this.rates['USD->' + from]) return 1 / this.rates['USD->' + from];
+      }
+      if (from === 'USD') {
+        if (this.rates['USD->' + to]) return this.rates['USD->' + to];
+        if (this.rates[to + '->USD']) return 1 / this.rates[to + '->USD'];
+      }
+      const a = (from === 'USD') ? 1 : (this.rates[from + '->USD'] || (this.rates['USD->' + from] ? 1 / this.rates['USD->' + from] : null));
+      const b = (to === 'USD') ? 1 : (this.rates['USD->' + to] || (this.rates[to + '->USD'] ? 1 / this.rates[to + '->USD'] : null));
+      if (a && b) return a * b;
+      const rev = this.rates[to + '->' + from];
+      if (rev) return 1 / rev;
+      return null;
     },
 
     // Converted amount, or null when the pair is not convertible
@@ -559,6 +581,8 @@
   }
 
   function typeLabel(type) {
+    if (type === 'withdrawal') return 'Transfer';
+    if (type === 'crypto_withdrawal') return 'Crypto Transfer';
     return String(type || '').replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
   }
 
